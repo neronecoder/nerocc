@@ -127,9 +127,52 @@ Node *primary(Token **cur, Token *tok);
 // Add, Sub, Mul, Div can be done in the same way, pop 2 values from stack top, compute result and push it on top of stack.
 
 // Assembly codes
-// pop <reg>: pop top of stack into <reg>
-// push <reg>: push <reg> value on top of stack
 
+// Data Movement
+// - mov S, D: move source to destination
+// - push S: push source onto stack
+// - pop D: pop top of stack into destination
+
+// Arithmetic op
+// Unary Op
+// - inc D: Increment by 1
+// - dec D: Decrement by 1
+// - neg D: Arithmetic negation
+// - not D: Bitwise complement
+// Binary Op
+// - imul S, D: Multiply destination by source
+// pop <reg>: pop top of stack into <reg> => read value from rsp's memory address, then increment rsp
+// push <reg>: push <reg> value on top of stack => decrement rsp, then write value to rsp's memory address
+
+// Comparison and test
+// - cmp S2, S1: Set condition codes according to S1 - S2
+// - test S2, S1: Set condition codes according to S1 & S2
+
+// Access condition codes
+// - sete/setz D: Set if equal/zero
+// - setne/setnz D: Set if not equal/non-zero
+// - setg/setnle D: Set if greater (signed)
+// - setge/setnl D: Set if greater or equal (signed)
+// - setl/setnge D: Set if less (signed)
+// - setle/setng D: Set if less or equal (signed)
+
+
+// Function prologue & Function epilogue
+/*
+ * Function prologue code
+ * ```
+ * push rbp # Push rbp of caller onto stack
+ * mov rsp, rbp # Copy rsp into rbp
+ * ```
+ * After prologue, we use rbp as a base memory address
+ * 
+ * Function epilogue code
+ * ```
+ * mov %rbp, %rsp # Move rsp value back from rbp
+ * pop %rbp # Pop rbp out from stack
+ * ```
+ * 
+ */ 
 void gen_code(Node *node);
 
 void gen_stmt(Node *node);
