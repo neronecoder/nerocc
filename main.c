@@ -114,6 +114,7 @@ typedef enum
     ND_SUB, // -
     ND_MUL, // *
     ND_DIV, // /
+    ND_NEG, // unary -
     ND_NUM, // integer
 } NodeKind;
 
@@ -143,6 +144,13 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs)
     return node;
 }
 
+Node *new_unary(NodeKind kind, Node *expr)
+{
+    Node *node = new_node(kind);
+    node->lhs = expr;
+    return node;
+}
+
 // integer
 Node *new_num(int val)
 {
@@ -152,12 +160,20 @@ Node *new_num(int val)
 }
 
 /* Grammar
- * expr = mul ("+" mul | "-" mul)*
- * mul  = primary ("*" primary | "/" primary)*
- * primary = num | "(" expr ")"
+ * expr     = equalitymul ("+" mul | "-" mul)*
+ * mul      = unary ("*" unary | "/" unary)*
+ * unary    = ("+" | "-")? unary | primary
+ * primary  = num | "(" expr ")"
  */
+
+static void print_node(Token *cur, const char *func)
+{
+    printf("# %s: %s\n", func, cur->loc);
+}
+
 static Node *expr(Token **cur, Token *tok);
 static Node *mul(Token **cur, Token *tok);
+static Node *unary(Token **cur, Token *tok);
 static Node *primary(Token **cur, Token *tok);
 
 // Steps
@@ -176,6 +192,7 @@ static Node *primary(Token **cur, Token *tok);
 //      mul0    mul1
 static Node *expr(Token **cur, Token *tok)
 {
+    print_node(tok, __FUNCTION__);
     Node *node = mul(&tok, tok);
 
     for (;;)
@@ -197,18 +214,19 @@ static Node *expr(Token **cur, Token *tok)
 
 static Node *mul(Token **cur, Token *tok)
 {
-    Node *node = primary(&tok, tok);
+    print_node(tok, __FUNCTION__);
+    Node *node = unary(&tok, tok);
 
     for (;;)
     {
         if (equal(tok, "*"))
         {
-            node = new_binary(ND_MUL, node, mul(&tok, tok->next));
+            node = new_binary(ND_MUL, node, unary(&tok, tok->next));
             continue;
         }
         if (equal(tok, "/"))
         {
-            node = new_binary(ND_DIV, node, mul(&tok, tok->next));
+            node = new_binary(ND_DIV, node, unary(&tok, tok->next));
             continue;
         }
         *cur = tok;
@@ -216,8 +234,32 @@ static Node *mul(Token **cur, Token *tok)
     }
 }
 
+// Converts +primary, -primary to be 0 + primary, 0 - primary
+static Node *unary(Token **cur, Token *tok)
+{
+    print_node(tok, __FUNCTION__);
+    if (equal(tok, "+"))
+    {
+        Node *node = unary(&tok, tok->next);
+        *cur = tok;
+        return node;
+    }
+
+    if (equal(tok, "-"))
+    {
+        Node *node = unary(&tok, tok->next);
+        *cur = tok;
+        return new_unary(ND_NEG, node);
+    }
+
+    Node *node = primary(&tok, tok);
+    *cur = tok;
+    return node;
+}
+
 static Node *primary(Token **cur, Token *tok)
 {
+    print_node(tok, __FUNCTION__);
     if (tok->kind == TK_NUM)
     {
         Node *node = new_num(tok->val);
@@ -247,9 +289,16 @@ static Node *primary(Token **cur, Token *tok)
 // push <reg>: push <reg> value on top of stack
 static void gen_code(Node *node)
 {
-    if (node->kind == ND_NUM)
+    switch (node->kind)
     {
+    case ND_NUM:
         printf("    push %d\n", node->val);
+        return;
+    case ND_NEG:
+        gen_code(node->lhs);
+        printf("    pop rax\n");
+        printf("    neg rax\n");
+        printf("    push rax\n");
         return;
     }
 
@@ -291,7 +340,8 @@ int main(int argc, char **argv)
     Token *tok = tokenize(argv[1]);
     Node *node = expr(&tok, tok);
 
-    if (tok->kind != TK_EOF) {
+    if (tok->kind != TK_EOF)
+    {
         error("Extra token exists");
     }
 
