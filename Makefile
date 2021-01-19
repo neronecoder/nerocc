@@ -1,7 +1,11 @@
 CFLAGS=-std=c11 -g -fno-common
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
 
-nerocc: main.o
-	$(CC) -o nerocc main.o $(LDFLAGS)
+nerocc: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(OBJS): nerocc.h
 
 test: nerocc
 	./test.sh
