@@ -116,6 +116,12 @@ Function *parse(Token *tok)
 Node *stmt(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
+    if (equal(tok, "return"))
+    {
+        Node *node = new_unary(ND_RETURN, expr(&tok, tok->next));
+        *cur = skip(tok, ";");
+        return node;
+    }
     return expr_stmt(cur, tok);
 }
 

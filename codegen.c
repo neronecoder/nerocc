@@ -18,6 +18,8 @@ void gen_code(Function *prog)
         gen_stmt(node);
     }
 
+    // Jump here with return
+    printf(".L.return:\n");
     // Epilogue
     printf("    mov %%rbp, %%rsp\n");
     printf("    pop %%rbp\n");
@@ -26,8 +28,14 @@ void gen_code(Function *prog)
 
 void gen_stmt(Node *node)
 {
-    if (node->kind == ND_EXPR_STMT)
+    switch (node->kind)
     {
+    case ND_RETURN:
+        gen_expr(node->lhs);
+        printf("    pop %%rax\n");
+        printf("    jmp .L.return\n");
+        return;
+    case ND_EXPR_STMT:
         gen_expr(node->lhs);
         printf("    pop %%rax\n");
         return;

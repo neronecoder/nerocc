@@ -18,10 +18,11 @@ void error(char *fmt, ...);
 // Tokenizer
 typedef enum
 {
-    TK_IDENT, // Identifiers
-    TK_PUNCT, // Punctuators
-    TK_NUM,   // Numeric literals
-    TK_EOF,   // End-of-file markers
+    TK_IDENT,   // Identifiers
+    TK_KEYWORD, // Reserved keywords
+    TK_PUNCT,   // Punctuators
+    TK_NUM,     // Numeric literals
+    TK_EOF,     // End-of-file markers
 } TokenKind;
 
 typedef struct Token Token;
@@ -60,6 +61,8 @@ bool is_valid_ident2(char c);
 
 Token *tokenize(char *p);
 
+void convert_keyword(Token *tok);
+
 // Parser
 typedef struct Node Node;
 typedef struct Var Var;
@@ -77,8 +80,9 @@ typedef enum
     ND_LT,        // less than <
     ND_LE,        // less than or equal to <=
     ND_ASSIGN,    // =
+    ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement #follow not sure what this is for
-    ND_VAR,       //Variable
+    ND_VAR,       // Variable
     ND_NUM,       // integer
 } NodeKind;
 
@@ -128,8 +132,8 @@ Var *find_var(Token *tok);
 
 /* Grammar
  * program      = stmt*
- * stmt         = expr-stmt
- * expr-stmt    = expr;
+ * stmt         = "return" expr ";" | exprexpr-stmt
+ * expr-stmt    = expr ";"
  * expr         = assign
  * assign       = equality ("=" assign)?
  * equality     = relational ("==" relational | "!=" relational)*

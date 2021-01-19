@@ -124,5 +124,17 @@ Token *tokenize(char *p)
     }
 
     cur->next = new_token(TK_EOF, p, p);
+    convert_keyword(head.next);
     return head.next;
+}
+
+void convert_keyword(Token *tok)
+{
+    for (Token *cur = tok; cur->kind != TK_EOF; cur = cur->next)
+    {
+        if (equal(cur, "return"))
+        {
+            cur->kind = TK_KEYWORD;
+        }
+    }
 }
