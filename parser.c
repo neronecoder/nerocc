@@ -97,7 +97,19 @@ Node *expr_stmt(Token **cur, Token *tok)
 Node *expr(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    return equality(cur, tok);
+    return assign(cur, tok);
+}
+
+Node *assign(Token **cur, Token *tok)
+{
+    print_node(tok, __FUNCTION__);
+    Node *node = equality(&tok, tok);
+    if (equal(tok, "="))
+    {
+        node = new_binary(ND_ASSIGN, node, assign(&tok, tok->next));
+    }
+    *cur = tok;
+    return node;
 }
 
 Node *equality(Token **cur, Token *tok)
@@ -227,6 +239,14 @@ Node *primary(Token **cur, Token *tok)
     if (tok->kind == TK_NUM)
     {
         Node *node = new_num(tok->val);
+        *cur = tok->next;
+        return node;
+    }
+
+    if (tok->kind == TK_IDENT)
+    {
+        Node *node = new_node(ND_VAR);
+        node->name = tok->loc[0];
         *cur = tok->next;
         return node;
     }

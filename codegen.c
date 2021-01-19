@@ -7,12 +7,21 @@ void gen_code(Node *node)
     printf(".globl main\n");
     printf("main:\n");
 
+    // Prologue
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    printf("    sub rsp, 208\n");
+
     Node *cur = node;
     while (cur)
     {
         gen_stmt(cur);
         cur = cur->next;
     }
+
+    // Epilogue
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
     printf("    ret\n");
 }
 
@@ -34,11 +43,26 @@ void gen_expr(Node *node)
     case ND_NUM:
         printf("    push %d\n", node->val);
         return;
+    case ND_VAR:
+        gen_lval(node);
+        printf("    pop rax\n");
+        printf("    mov rax, [rax]\n");
+        printf("    push rax\n");
+        return;
     case ND_NEG:
         gen_expr(node->lhs);
         printf("    pop rax\n");
         printf("    neg rax\n");
         printf("    push rax\n");
+        return;
+    case ND_ASSIGN:
+        gen_lval(node->lhs);
+        gen_expr(node->rhs);
+
+        printf("    pop rdi\n");
+        printf("    pop rax\n");
+        printf("    mov [rax], rdi\n");
+        printf("    push rdi\n");
         return;
     }
 
@@ -90,5 +114,17 @@ void gen_expr(Node *node)
         printf("    movzb rax, al\n");
     }
 
+    printf("    push rax\n");
+}
+
+void gen_lval(Node *node)
+{
+    if (node->kind != ND_VAR)
+    {
+        error("Left hand side of the assignment is not a variable.");
+    }
+    int offset = (node->name - 'a' + 1) * 8;
+    printf("    mov rax, rbp\n");
+    printf("    sub rax, %d\n", offset);
     printf("    push rax\n");
 }

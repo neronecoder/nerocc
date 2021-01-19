@@ -74,6 +74,16 @@ Token *tokenize(char *p)
             continue;
         }
 
+        // Variable
+        if ('a' <= *p && *p <= 'z')
+        {
+            cur->next = new_token(TK_IDENT, p, p + 1);
+            cur->len = 1;
+            cur = cur->next;
+            p++;
+            continue;
+        }
+
         // Punctuators
         int punct_len = read_punct(p);
         if (punct_len > 0)
@@ -83,6 +93,7 @@ Token *tokenize(char *p)
             p += punct_len;
             continue;
         }
+
         error("invalid token");
     }
 

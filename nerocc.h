@@ -16,6 +16,7 @@ void error(char *fmt, ...);
 // Tokenizer
 typedef enum
 {
+    TK_IDENT, // Identifiers
     TK_PUNCT, // Punctuators
     TK_NUM,   // Numeric literals
     TK_EOF,   // End-of-file markers
@@ -60,7 +61,9 @@ typedef enum
     ND_NE,        // not equal !=
     ND_LT,        // less than <
     ND_LE,        // less than or equal to <=
+    ND_ASSIGN,    // =
     ND_EXPR_STMT, // Expression statement #follow not sure what this is for
+    ND_VAR,       //Variable
     ND_NUM,       // integer
 } NodeKind;
 
@@ -72,6 +75,7 @@ struct Node
     Node *next;
     Node *lhs;
     Node *rhs;
+    char name; // used if kind == ND_VAR
     int val;
 };
 
@@ -89,13 +93,14 @@ Node *new_num(int val);
  * program      = stmt*
  * stmt         = expr-stmt
  * expr-stmt    = expr;
- * expr         = equality
+ * expr         = assign
+ * assign       = equality ("=" assign)?
  * equality     = relational ("==" relational | "!=" relational)*
  * relational   = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add          = mul ("+" mul | "-" mul)*
  * mul          = unary ("*" unary | "/" unary)*
  * unary        = ("+" | "-")? unary | primary
- * primary      = num | "(" expr ")"
+ * primary      = num | ident | "(" expr ")"
  */
 
 void print_node(Token *cur, const char *func);
@@ -106,6 +111,7 @@ Node *parse(Token *tok);
 Node *stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
+Node *assign(Token **cur, Token *tok);
 Node *equality(Token **cur, Token *tok);
 Node *relational(Token **cur, Token *tok);
 Node *add(Token **cur, Token *tok);
@@ -128,4 +134,5 @@ void gen_code(Node *node);
 
 void gen_stmt(Node *node);
 void gen_expr(Node *node);
+void gen_lval(Node *node);
 #endif
