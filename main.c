@@ -9,22 +9,9 @@ int main(int argc, char **argv)
     }
 
     Token *tok = tokenize(argv[1]);
-    Node *node = expr(&tok, tok);
-
-    if (tok->kind != TK_EOF)
-    {
-        error("Extra token exists");
-    }
-
-    // Code generation
-    printf(".intel_syntax noprefix\n");
-    printf(".globl main\n");
-    printf("main:\n");
+    Node *node = parse(tok);
 
     // Traverse AST to emit assembly.
     gen_code(node);
-
-    printf("    pop rax\n");
-    printf("    ret\n");
     return 0;
 }

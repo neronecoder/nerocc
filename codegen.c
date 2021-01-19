@@ -2,13 +2,40 @@
 
 void gen_code(Node *node)
 {
+    // required statements
+    printf(".intel_syntax noprefix\n");
+    printf(".globl main\n");
+    printf("main:\n");
+
+    Node *cur = node;
+    while (cur)
+    {
+        gen_stmt(cur);
+        cur = cur->next;
+    }
+    printf("    ret\n");
+}
+
+void gen_stmt(Node *node)
+{
+    if (node->kind == ND_EXPR_STMT)
+    {
+        gen_expr(node->lhs);
+        printf("    pop rax\n");
+        return;
+    }
+    error("Invalid statement.");
+}
+
+void gen_expr(Node *node)
+{
     switch (node->kind)
     {
     case ND_NUM:
         printf("    push %d\n", node->val);
         return;
     case ND_NEG:
-        gen_code(node->lhs);
+        gen_expr(node->lhs);
         printf("    pop rax\n");
         printf("    neg rax\n");
         printf("    push rax\n");
@@ -16,8 +43,8 @@ void gen_code(Node *node)
     }
 
     // First compute lhs and rhs, top 2 values on stack shuold be rhs, lhs, ...
-    gen_code(node->lhs);
-    gen_code(node->rhs);
+    gen_expr(node->lhs);
+    gen_expr(node->rhs);
 
     printf("    pop rdi\n");
     printf("    pop rax\n");

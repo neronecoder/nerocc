@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define LOG 0
+
 // Common util methods
 void error(char *fmt, ...);
 
@@ -49,16 +51,17 @@ Token *tokenize(char *p);
 // Parser
 typedef enum
 {
-    ND_ADD, // +
-    ND_SUB, // -
-    ND_MUL, // *
-    ND_DIV, // /
-    ND_NEG, // unary -
-    ND_EQ,  // equal ==
-    ND_NE,  // not equal !=
-    ND_LT,  // less than <
-    ND_LE,  // less than or equal to <=
-    ND_NUM, // integer
+    ND_ADD,       // +
+    ND_SUB,       // -
+    ND_MUL,       // *
+    ND_DIV,       // /
+    ND_NEG,       // unary -
+    ND_EQ,        // equal ==
+    ND_NE,        // not equal !=
+    ND_LT,        // less than <
+    ND_LE,        // less than or equal to <=
+    ND_EXPR_STMT, // Expression statement #follow not sure what this is for
+    ND_NUM,       // integer
 } NodeKind;
 
 typedef struct Node Node;
@@ -66,6 +69,7 @@ typedef struct Node Node;
 struct Node
 {
     NodeKind kind;
+    Node *next;
     Node *lhs;
     Node *rhs;
     int val;
@@ -82,6 +86,9 @@ Node *new_unary(NodeKind kind, Node *expr);
 Node *new_num(int val);
 
 /* Grammar
+ * program      = stmt*
+ * stmt         = expr-stmt
+ * expr-stmt    = expr;
  * expr         = equality
  * equality     = relational ("==" relational | "!=" relational)*
  * relational   = add ("<" add | "<=" add | ">" add | ">=" add)*
@@ -93,6 +100,11 @@ Node *new_num(int val);
 
 void print_node(Token *cur, const char *func);
 
+// Entry point for parsing
+Node *parse(Token *tok);
+
+Node *stmt(Token **cur, Token *tok);
+Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
 Node *equality(Token **cur, Token *tok);
 Node *relational(Token **cur, Token *tok);
@@ -111,5 +123,9 @@ Node *primary(Token **cur, Token *tok);
 // Assembly codes
 // pop <reg>: pop top of stack into <reg>
 // push <reg>: push <reg> value on top of stack
+
 void gen_code(Node *node);
+
+void gen_stmt(Node *node);
+void gen_expr(Node *node);
 #endif

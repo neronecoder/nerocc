@@ -32,6 +32,9 @@ Node *new_num(int val)
 }
 
 /* Grammar
+ * program      = stmt*
+ * stmt         = expr-stmt
+ * expr-stmt    = expr;
  * expr         = equality
  * equality     = relational ("==" relational | "!=" relational)*
  * relational   = add ("<" add | "<=" add | ">" add | ">=" add)*
@@ -43,18 +46,26 @@ Node *new_num(int val)
 
 void print_node(Token *cur, const char *func)
 {
-    printf("# %s: %s\n", func, cur->loc);
+    if (LOG)
+    {
+        fprintf(stderr, "# %s: %s\n", func, cur->loc);
+    }
 }
 
-Node *expr(Token **cur, Token *tok);
-Node *equality(Token **cur, Token *tok);
-Node *relational(Token **cur, Token *tok);
-Node *add(Token **cur, Token *tok);
-Node *mul(Token **cur, Token *tok);
-Node *unary(Token **cur, Token *tok);
-Node *primary(Token **cur, Token *tok);
+Node *parse(Token *tok)
+{
+    print_node(tok, __FUNCTION__);
+    Node head = {};
+    Node *cur = &head;
+    while (tok->kind != TK_EOF)
+    {
+        cur->next = stmt(&tok, tok);
+        cur = cur->next;
+    }
+    return head.next;
+}
 
-// Steps
+// Steps (Ex. add)
 // 1. Parse left hand side: mul0
 // 2. While there is a valid operator, make current node to be lhs and add it as rhs
 // 3. Keep applying the operation
@@ -68,6 +79,20 @@ Node *primary(Token **cur, Token *tok);
 //        -----
 //       |     |
 //      mul0    mul1
+
+Node *stmt(Token **cur, Token *tok)
+{
+    print_node(tok, __FUNCTION__);
+    return expr_stmt(cur, tok);
+}
+
+Node *expr_stmt(Token **cur, Token *tok)
+{
+    print_node(tok, __FUNCTION__);
+    Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
+    *cur = skip(tok, ";");
+    return node;
+}
 
 Node *expr(Token **cur, Token *tok)
 {
