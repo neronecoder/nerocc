@@ -1,7 +1,9 @@
 #include "nerocc.h"
 
-void gen_code(Node *node)
+void gen_code(Function *prog)
 {
+    assign_lvar_offsets(prog);
+
     // required statements
     printf(".globl main\n");
     printf("main:\n");
@@ -9,13 +11,11 @@ void gen_code(Node *node)
     // Prologue
     printf("    push %%rbp\n");
     printf("    mov %%rsp, %%rbp\n");
-    printf("    sub $208, %%rsp\n");
+    printf("    sub $%d, %%rsp\n", prog->stack_size);
 
-    Node *cur = node;
-    while (cur)
+    for (Node *node = prog->body; node; node = node->next)
     {
-        gen_stmt(cur);
-        cur = cur->next;
+        gen_stmt(node);
     }
 
     // Epilogue
@@ -120,8 +120,23 @@ void gen_lval(Node *node)
     {
         error("Left hand side of the assignment is not a variable.");
     }
-    int offset = (node->name - 'a' + 1) * 8;
     printf("    mov %%rbp, %%rax\n");
-    printf("    sub $%d, %%rax\n", offset);
+    printf("    sub $%d, %%rax\n", node->var->offset);
     printf("    push %%rax\n");
+}
+
+void assign_lvar_offsets(Function *prog)
+{
+    int offset = 0;
+    for (Var *var = prog->locals; var; var = var->next)
+    {
+        offset += 8;
+        var->offset = offset;
+    }
+    prog->stack_size = align_to(offset, 16);
+}
+
+int align_to(int offset, int align)
+{
+    return (offset + align - 1) / align * align;
 }

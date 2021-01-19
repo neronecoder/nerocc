@@ -9,9 +9,9 @@ int main(int argc, char **argv)
     }
 
     Token *tok = tokenize(argv[1]);
-    Node *node = parse(tok);
+    Function *prog = parse(tok);
 
     // Traverse AST to emit assembly.
-    gen_code(node);
+    gen_code(prog);
     return 0;
 }

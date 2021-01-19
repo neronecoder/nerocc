@@ -1,5 +1,7 @@
 #include "nerocc.h"
 
+Var *locals;
+
 Node *new_node(NodeKind kind)
 {
     Node *node = calloc(1, sizeof(Node));
@@ -23,12 +25,39 @@ Node *new_unary(NodeKind kind, Node *expr)
     return node;
 }
 
-// integer
 Node *new_num(int val)
 {
     Node *node = new_node(ND_NUM);
     node->val = val;
     return node;
+}
+
+Node *new_var_node(Var *var)
+{
+    Node *node = new_node(ND_VAR);
+    node->var = var;
+    return node;
+}
+
+Var *new_var(char *name)
+{
+    Var *var = calloc(1, sizeof(Var));
+    var->name = name;
+    var->next = locals;
+    locals = var;
+    return var;
+}
+
+Var *find_var(Token *tok)
+{
+    for (Var *var = locals; var; var = var->next)
+    {
+        if (strlen(var->name) == tok->len && strncmp(tok->loc, var->name, tok->len) == 0)
+        {
+            return var;
+        }
+    }
+    return NULL;
 }
 
 /* Grammar
@@ -52,7 +81,7 @@ void print_node(Token *cur, const char *func)
     }
 }
 
-Node *parse(Token *tok)
+Function *parse(Token *tok)
 {
     print_node(tok, __FUNCTION__);
     Node head = {};
@@ -62,7 +91,11 @@ Node *parse(Token *tok)
         cur->next = stmt(&tok, tok);
         cur = cur->next;
     }
-    return head.next;
+
+    Function *prog = calloc(1, sizeof(Function));
+    prog->body = head.next;
+    prog->locals = locals;
+    return prog;
 }
 
 // Steps (Ex. add)
@@ -246,9 +279,13 @@ Node *primary(Token **cur, Token *tok)
     if (tok->kind == TK_IDENT)
     {
         Node *node = new_node(ND_VAR);
-        node->name = tok->loc[0];
+        Var *var = find_var(tok);
+        if (!var)
+        {
+            var = new_var(strndup(tok->loc, tok->len));
+        }
         *cur = tok->next;
-        return node;
+        return new_var_node(var);
     }
 
     if (equal(tok, "("))

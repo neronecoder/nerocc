@@ -1,6 +1,8 @@
 #ifndef NEROCC_H
 #define NEROCC_H
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -30,7 +32,7 @@ struct Token
     Token *next;
     int val;
     char *loc;
-    int len;
+    size_t len;
 };
 
 Token *new_token(TokenKind kind, char *start, char *end);
@@ -47,9 +49,22 @@ bool starts_with(char *p, char *q);
 // Read a punctuator token from p and returns its length.
 int read_punct(char *p);
 
+// Read an identifier token from p and returns its length.
+int read_ident(char *p);
+
+// check if the first character of identifier is valid
+bool is_valid_ident1(char c);
+
+// check if the second, ... characters of identifier are valid
+bool is_valid_ident2(char c);
+
 Token *tokenize(char *p);
 
 // Parser
+typedef struct Node Node;
+typedef struct Var Var;
+typedef struct Function Function;
+
 typedef enum
 {
     ND_ADD,       // +
@@ -67,18 +82,33 @@ typedef enum
     ND_NUM,       // integer
 } NodeKind;
 
-typedef struct Node Node;
-
 struct Node
 {
     NodeKind kind;
     Node *next;
     Node *lhs;
     Node *rhs;
-    char name; // used if kind == ND_VAR
+    Var *var; // used if kind == ND_VAR
     int val;
 };
 
+// Local Variable
+struct Var
+{
+    Var *next;
+    char *name;
+    int offset; // offset from rbp
+};
+
+// Function
+struct Function
+{
+    Node *body;
+    Var *locals;
+    int stack_size;
+};
+
+// Functions for node creation
 Node *new_node(NodeKind kind);
 
 // binary operator +, -, *, /
@@ -88,6 +118,13 @@ Node *new_unary(NodeKind kind, Node *expr);
 
 // integer
 Node *new_num(int val);
+
+// identifier
+Node *new_var_node(Var *var);
+
+// Functions for variable
+Var *new_var(char *name);
+Var *find_var(Token *tok);
 
 /* Grammar
  * program      = stmt*
@@ -106,7 +143,7 @@ Node *new_num(int val);
 void print_node(Token *cur, const char *func);
 
 // Entry point for parsing
-Node *parse(Token *tok);
+Function *parse(Token *tok);
 
 Node *stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
@@ -156,7 +193,6 @@ Node *primary(Token **cur, Token *tok);
 // - setl/setnge D: Set if less (signed)
 // - setle/setng D: Set if less or equal (signed)
 
-
 // Function prologue & Function epilogue
 /*
  * Function prologue code
@@ -172,10 +208,13 @@ Node *primary(Token **cur, Token *tok);
  * pop %rbp # Pop rbp out from stack
  * ```
  * 
- */ 
-void gen_code(Node *node);
+ */
+void gen_code(Function *prog);
 
 void gen_stmt(Node *node);
 void gen_expr(Node *node);
 void gen_lval(Node *node);
+
+void assign_lvar_offsets(Function *prog);
+int align_to(int offset, int align);
 #endif

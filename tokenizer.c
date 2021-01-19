@@ -49,6 +49,32 @@ int read_punct(char *p)
     return ispunct(*p) ? 1 : 0;
 }
 
+int read_ident(char *p)
+{
+    if (!is_valid_ident1(*p))
+    {
+        return 0;
+    }
+    int cnt = 1;
+    while (is_valid_ident2(*(p + cnt)))
+    {
+        cnt++;
+    }
+    return cnt;
+}
+
+// check if the first character of identifier is valid
+bool is_valid_ident1(char c)
+{
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
+// check if the second, ... characters of identifier are valid
+bool is_valid_ident2(char c)
+{
+    return is_valid_ident1(c) || ('0' <= c && c <= '9');
+}
+
 Token *tokenize(char *p)
 {
     Token head = {};
@@ -75,12 +101,12 @@ Token *tokenize(char *p)
         }
 
         // Variable
-        if ('a' <= *p && *p <= 'z')
+        int variable_len = read_ident(p);
+        if (variable_len > 0)
         {
-            cur->next = new_token(TK_IDENT, p, p + 1);
-            cur->len = 1;
+            cur->next = new_token(TK_IDENT, p, p + variable_len);
             cur = cur->next;
-            p++;
+            p += variable_len;
             continue;
         }
 
