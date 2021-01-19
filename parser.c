@@ -84,16 +84,11 @@ void print_node(Token *cur, const char *func)
 Function *parse(Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    Node head = {};
-    Node *cur = &head;
-    while (tok->kind != TK_EOF)
-    {
-        cur->next = stmt(&tok, tok);
-        cur = cur->next;
-    }
+    // program will be "{" compound_stmt, i.e. "{" stmt* "}"
+    tok = skip(tok, "{");
 
     Function *prog = calloc(1, sizeof(Function));
-    prog->body = head.next;
+    prog->body = compound_stmt(&tok, tok);
     prog->locals = locals;
     return prog;
 }
@@ -122,7 +117,29 @@ Node *stmt(Token **cur, Token *tok)
         *cur = skip(tok, ";");
         return node;
     }
+
+    if (equal(tok, "{"))
+    {
+        return compound_stmt(cur, tok->next);
+    }
     return expr_stmt(cur, tok);
+}
+
+Node *compound_stmt(Token **cur, Token *tok)
+{
+    Node head = {};
+    Node *t = &head;
+
+    while (!equal(tok, "}"))
+    {
+        t->next = stmt(&tok, tok);
+        t = t->next;
+    }
+
+    Node *node = new_node(ND_BLOCK);
+    node->body = head.next;
+    *cur = tok->next;
+    return node;
 }
 
 Node *expr_stmt(Token **cur, Token *tok)

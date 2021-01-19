@@ -13,10 +13,7 @@ void gen_code(Function *prog)
     printf("    mov %%rsp, %%rbp\n");
     printf("    sub $%d, %%rsp\n", prog->stack_size);
 
-    for (Node *node = prog->body; node; node = node->next)
-    {
-        gen_stmt(node);
-    }
+    gen_stmt(prog->body);
 
     // Jump here with return
     printf(".L.return:\n");
@@ -34,6 +31,12 @@ void gen_stmt(Node *node)
         gen_expr(node->lhs);
         printf("    pop %%rax\n");
         printf("    jmp .L.return\n");
+        return;
+    case ND_BLOCK:
+        for (Node *n = node->body; n; n = n->next)
+        {
+            gen_stmt(n);
+        }
         return;
     case ND_EXPR_STMT:
         gen_expr(node->lhs);

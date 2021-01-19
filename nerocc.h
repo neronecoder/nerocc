@@ -82,6 +82,7 @@ typedef enum
     ND_ASSIGN,    // =
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement #follow not sure what this is for
+    ND_BLOCK,     // block {...}
     ND_VAR,       // Variable
     ND_NUM,       // integer
 } NodeKind;
@@ -92,6 +93,7 @@ struct Node
     Node *next;
     Node *lhs;
     Node *rhs;
+    Node *body;
     Var *var; // used if kind == ND_VAR
     int val;
 };
@@ -132,7 +134,8 @@ Var *find_var(Token *tok);
 
 /* Grammar
  * program      = stmt*
- * stmt         = "return" expr ";" | exprexpr-stmt
+ * stmt         = "return" expr ";" | "{" compound-stmt | exprexpr-stmt
+ * compound-stmt = stmt* "}"
  * expr-stmt    = expr ";"
  * expr         = assign
  * assign       = equality ("=" assign)?
@@ -150,6 +153,7 @@ void print_node(Token *cur, const char *func);
 Function *parse(Token *tok);
 
 Node *stmt(Token **cur, Token *tok);
+Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
 Node *assign(Token **cur, Token *tok);
