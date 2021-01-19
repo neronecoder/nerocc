@@ -145,6 +145,12 @@ Node *compound_stmt(Token **cur, Token *tok)
 Node *expr_stmt(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
+    // For null statement, i.e. just ";"
+    if (equal(tok, ";"))
+    {
+        *cur = tok->next;
+        return new_node(ND_BLOCK);
+    }
     Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
     *cur = skip(tok, ";");
     return node;

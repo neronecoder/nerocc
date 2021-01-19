@@ -136,7 +136,7 @@ Var *find_var(Token *tok);
  * program      = stmt*
  * stmt         = "return" expr ";" | "{" compound-stmt | exprexpr-stmt
  * compound-stmt = stmt* "}"
- * expr-stmt    = expr ";"
+ * expr-stmt    = expr? ";"
  * expr         = assign
  * assign       = equality ("=" assign)?
  * equality     = relational ("==" relational | "!=" relational)*
