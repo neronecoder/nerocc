@@ -117,10 +117,18 @@ void gen_expr(Node *node)
         printf("    push $%d\n", node->val);
         return;
     case ND_VAR:
-        gen_lval(node);
+        gen_addr(node);
         printf("    pop %%rax\n");
         printf("    mov (%%rax), %%rax\n");
         printf("    push %%rax\n");
+        return;
+    case ND_DEREF:
+        gen_expr(node->lhs);
+        printf("    mov  (%%rax), %%rax\n");
+        printf("    push %%rax\n");
+        return;
+    case ND_ADDR:
+        gen_addr(node->lhs);
         return;
     case ND_NEG:
         gen_expr(node->lhs);
@@ -129,7 +137,7 @@ void gen_expr(Node *node)
         printf("    push %%rax\n");
         return;
     case ND_ASSIGN:
-        gen_lval(node->lhs);
+        gen_addr(node->lhs);
         gen_expr(node->rhs);
 
         printf("    pop %%rdi\n");
@@ -188,15 +196,19 @@ void gen_expr(Node *node)
     printf("    push %%rax\n");
 }
 
-void gen_lval(Node *node)
+void gen_addr(Node *node)
 {
-    if (node->kind != ND_VAR)
+    switch (node->kind)
     {
-        error("Left hand side of the assignment is not a variable.");
+    case ND_VAR:
+        printf("    mov %%rbp, %%rax\n");
+        printf("    sub $%d, %%rax\n", node->var->offset);
+        printf("    push %%rax\n");
+        return;
+    case ND_DEREF:
+        gen_expr(node->lhs);
+        return;
     }
-    printf("    mov %%rbp, %%rax\n");
-    printf("    sub $%d, %%rax\n", node->var->offset);
-    printf("    push %%rax\n");
 }
 
 void assign_lvar_offsets(Function *prog)

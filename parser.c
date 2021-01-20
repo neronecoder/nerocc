@@ -338,6 +338,20 @@ Node *unary(Token **cur, Token *tok)
         return new_unary(ND_NEG, node);
     }
 
+    if (equal(tok, "*"))
+    {
+        Node *node = unary(&tok, tok->next);
+        *cur = tok;
+        return new_unary(ND_DEREF, node);
+    }
+
+    if (equal(tok, "&"))
+    {
+        Node *node = unary(&tok, tok->next);
+        *cur = tok;
+        return new_unary(ND_ADDR, node);
+    }
+
     Node *node = primary(&tok, tok);
     *cur = tok;
     return node;

@@ -80,6 +80,8 @@ typedef enum
     ND_LT,        // less than <
     ND_LE,        // less than or equal to <=
     ND_ASSIGN,    // =
+    ND_ADDR,      // unary &
+    ND_DEREF,     // unary *
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement #follow not sure what this is for
     ND_BLOCK,     // block {...}
@@ -163,7 +165,7 @@ Var *find_var(Token *tok);
  * relational   = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add          = mul ("+" mul | "-" mul)*
  * mul          = unary ("*" unary | "/" unary)*
- * unary        = ("+" | "-")? unary | primary
+ * unary        = ("+" | "-" | "*" | "&")? unary | primary
  * primary      = num | ident | "(" expr ")"
  */
 
@@ -241,7 +243,7 @@ void gen_code(Function *prog);
 
 void gen_stmt(Node *node);
 void gen_expr(Node *node);
-void gen_lval(Node *node);
+void gen_addr(Node *node);
 
 void assign_lvar_offsets(Function *prog);
 int align_to(int offset, int align);
