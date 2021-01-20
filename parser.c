@@ -182,6 +182,7 @@ Node *compound_stmt(Token **cur, Token *tok)
     {
         t->next = stmt(&tok, tok);
         t = t->next;
+        add_type(t);
     }
 
     Node *node = new_node(ND_BLOCK);
@@ -285,17 +286,85 @@ Node *add(Token **cur, Token *tok)
     {
         if (equal(tok, "+"))
         {
-            node = new_binary(ND_ADD, node, mul(&tok, tok->next));
+            node = add_with_type(node, mul(&tok, tok->next));
             continue;
         }
         if (equal(tok, "-"))
         {
-            node = new_binary(ND_SUB, node, mul(&tok, tok->next));
+            node = sub_with_type(node, mul(&tok, tok->next));
             continue;
         }
         *cur = tok;
         return node;
     }
+}
+
+Node *add_with_type(Node *lhs, Node *rhs)
+{
+    add_type(lhs);
+    add_type(rhs);
+
+    // num + num
+    if (is_integer(lhs->ty) && is_integer(rhs->ty))
+    {
+        return new_binary(ND_ADD, lhs, rhs);
+    }
+
+    // We don't allow ptr + ptr op
+    if (lhs->ty->base && rhs->ty->base)
+    {
+        error("Invalid operands.");
+    }
+
+    // Canonicalize num + ptr to ptr + num.
+    if (!lhs->ty->base && rhs->ty->base)
+    {
+        Node *tmp = lhs;
+        lhs = rhs;
+        rhs = tmp;
+    }
+
+    // multiply by 8
+    rhs = new_binary(ND_MUL, rhs, new_num(8));
+    return new_binary(ND_ADD, lhs, rhs);
+}
+
+Node *sub_with_type(Node *lhs, Node *rhs)
+{
+    add_type(lhs);
+    add_type(rhs);
+
+    // num - num
+    if (is_integer(lhs->ty) && is_integer(rhs->ty))
+    {
+        return new_binary(ND_SUB, lhs, rhs);
+    }
+
+    // We don't allow num - ptr op
+    if (is_integer(lhs->ty) && rhs->ty->base)
+    {
+        error("Invalid operands.");
+    }
+
+    // ptr - num
+    if (lhs->ty->base && is_integer(rhs->ty))
+    {
+        rhs = new_binary(ND_MUL, rhs, new_num(8));
+        add_type(rhs);
+        Node *node = new_binary(ND_SUB, lhs, rhs);
+        node->ty = lhs->ty;
+        return node;
+    }
+
+    // ptr - ptr returns how many elements between them
+    if (lhs->ty->base && rhs->ty->base)
+    {
+        Node *node = new_binary(ND_SUB, lhs, rhs);
+        node->ty = ty_int;
+        return new_binary(ND_DIV, node, new_num(8));
+    }
+    rhs = new_binary(ND_MUL, rhs, new_num(8));
+    return new_binary(ND_ADD, lhs, rhs);
 }
 
 Node *mul(Token **cur, Token *tok)

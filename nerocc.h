@@ -15,6 +15,30 @@
 // Common util methods
 void error(char *fmt, ...);
 
+// Common definitions
+typedef struct Type Type;
+typedef struct Token Token;
+typedef struct Node Node;
+typedef struct Var Var;
+typedef struct Function Function;
+
+// Type
+typedef enum
+{
+    TY_INT,
+    TY_PTR,
+} TypeKind;
+
+struct Type
+{
+    TypeKind kind;
+    Type *base;
+};
+
+extern Type *ty_int;
+bool is_integer(Type *ty);
+void add_type(Node *node);
+
 // Tokenizer
 typedef enum
 {
@@ -24,8 +48,6 @@ typedef enum
     TK_NUM,     // Numeric literals
     TK_EOF,     // End-of-file markers
 } TokenKind;
-
-typedef struct Token Token;
 
 struct Token
 {
@@ -64,9 +86,6 @@ Token *tokenize(char *p);
 void convert_keyword(Token *tok);
 
 // Parser
-typedef struct Node Node;
-typedef struct Var Var;
-typedef struct Function Function;
 
 typedef enum
 {
@@ -96,6 +115,7 @@ struct Node
 {
     NodeKind kind; // Node kind
     Node *next;    // Next node
+    Type *ty;      // Type after all evaluation.
 
     Node *lhs;
     Node *rhs;
@@ -185,6 +205,9 @@ Node *add(Token **cur, Token *tok);
 Node *mul(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
+
+Node *add_with_type(Node *lhs, Node*rhs);
+Node *sub_with_type(Node *lhs, Node*rhs);
 
 // Code Generator
 
