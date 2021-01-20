@@ -130,14 +130,15 @@ Token *tokenize(char *p)
 
 bool is_keyword(Token *tok)
 {
-    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else");
+    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for");
 }
 
 void convert_keyword(Token *tok)
 {
     for (Token *cur = tok; cur->kind != TK_EOF; cur = cur->next)
     {
-        if (is_keyword(cur)) {
+        if (is_keyword(cur))
+        {
             cur->kind = TK_KEYWORD;
         }
     }
