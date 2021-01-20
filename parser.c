@@ -159,6 +159,17 @@ Node *stmt(Token **cur, Token *tok)
         node->then = stmt(cur, tok);
         return node;
     }
+
+    if (equal(tok, "while"))
+    {
+        Node *node = new_node(ND_WHILE);
+        tok = skip(tok->next, "(");
+        node->cond = expr(&tok, tok);
+        tok = skip(tok, ")");
+
+        node->then = stmt(cur, tok);
+        return node;
+    }
     return expr_stmt(cur, tok);
 }
 

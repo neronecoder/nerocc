@@ -87,6 +87,20 @@ void gen_stmt(Node *node)
         printf(".L.end.%d:\n", c);
         return;
     }
+    case ND_WHILE:
+    {
+        int c = count();
+        printf(".L.begin.%d:\n", c);
+        gen_expr(node->cond);
+        printf("    pop %%rax\n");
+        printf("    cmp $0, %%rax\n");
+        printf("    je  .L.end.%d\n", c);
+
+        gen_stmt(node->then);
+        printf("    jmp .L.begin.%d\n", c);
+        printf(".L.end.%d:\n", c);
+        return;
+    }
     case ND_EXPR_STMT:
         gen_expr(node->lhs);
         printf("    pop %%rax\n");

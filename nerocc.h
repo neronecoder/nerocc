@@ -85,6 +85,7 @@ typedef enum
     ND_BLOCK,     // block {...}
     ND_IF,        // if
     ND_FOR,       // for
+    ND_WHILE,     // while
     ND_VAR,       // Variable
     ND_NUM,       // integer
 } NodeKind;
@@ -152,6 +153,7 @@ Var *find_var(Token *tok);
  *              | "{" compound-stmt
  *              | "if" "(" expr ")" stmt ("else" stmt)?
  *              | "for" "(" expr-stmt expr? ";" expr? ")" stmt
+ *              | "while" "(" expr ")" stmt
  *              | exprexpr-stmt
  * compound-stmt = stmt* "}"
  * expr-stmt    = expr? ";"
