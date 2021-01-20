@@ -83,16 +83,30 @@ typedef enum
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement #follow not sure what this is for
     ND_BLOCK,     // block {...}
+    ND_IF,        // if
+    ND_FOR,       // for
     ND_VAR,       // Variable
     ND_NUM,       // integer
 } NodeKind;
 
 struct Node
 {
-    NodeKind kind;
-    Node *next;
+    NodeKind kind; // Node kind
+    Node *next;    // Next node
+
     Node *lhs;
     Node *rhs;
+
+    // "if" statement
+    Node *cond;
+    Node *then;
+    Node *els;
+
+    // "for" statement
+    Node *init;
+    Node *inc;
+
+    // Block
     Node *body;
     Var *var; // used if kind == ND_VAR
     int val;
@@ -134,7 +148,11 @@ Var *find_var(Token *tok);
 
 /* Grammar
  * program      = stmt*
- * stmt         = "return" expr ";" | "{" compound-stmt | exprexpr-stmt
+ * stmt         = "return" expr ";" 
+ *              | "{" compound-stmt
+ *              | "if" "(" expr ")" stmt ("else" stmt)?
+ *              | "for" "(" expr-stmt expr? ";" expr? ")" stmt
+ *              | exprexpr-stmt
  * compound-stmt = stmt* "}"
  * expr-stmt    = expr? ";"
  * expr         = assign

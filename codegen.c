@@ -1,5 +1,11 @@
 #include "nerocc.h"
 
+static int count()
+{
+    static int i = 1;
+    return i++;
+}
+
 void gen_code(Function *prog)
 {
     assign_lvar_offsets(prog);
@@ -38,6 +44,26 @@ void gen_stmt(Node *node)
             gen_stmt(n);
         }
         return;
+    case ND_IF:
+    {
+        int c = count();
+        gen_expr(node->cond);
+        printf("    pop %%rax\n");
+        printf("    cmp $0, %%rax\n");
+        printf("    je  .L.else.%d\n", c);
+        gen_stmt(node->then);
+        printf("    pop %%rax\n");
+        printf("    jmp .L.end.%d\n", c);
+        printf(".L.else.%d:\n", c);
+
+        if (node->els)
+        {
+            gen_stmt(node->els);
+            printf("pop %%rax\n");
+        }
+        printf(".L.end.%d:\n", c);
+        return;
+    }
     case ND_EXPR_STMT:
         gen_expr(node->lhs);
         printf("    pop %%rax\n");

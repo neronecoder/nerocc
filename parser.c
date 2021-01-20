@@ -122,6 +122,25 @@ Node *stmt(Token **cur, Token *tok)
     {
         return compound_stmt(cur, tok->next);
     }
+
+    if (equal(tok, "if"))
+    {
+        Node *node = new_node(ND_IF);
+        tok = skip(tok->next, "(");
+        node->cond = expr(&tok, tok);
+        tok = skip(tok, ")");
+
+        node->then = stmt(&tok, tok);
+
+        if (equal(tok, "else"))
+        {
+            node->els = stmt(&tok, tok->next);
+        }
+
+        *cur = tok;
+        return node;
+    }
+    
     return expr_stmt(cur, tok);
 }
 

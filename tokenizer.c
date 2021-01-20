@@ -128,12 +128,16 @@ Token *tokenize(char *p)
     return head.next;
 }
 
+bool is_keyword(Token *tok)
+{
+    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else");
+}
+
 void convert_keyword(Token *tok)
 {
     for (Token *cur = tok; cur->kind != TK_EOF; cur = cur->next)
     {
-        if (equal(cur, "return"))
-        {
+        if (is_keyword(cur)) {
             cur->kind = TK_KEYWORD;
         }
     }
