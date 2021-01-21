@@ -145,6 +145,11 @@ void gen_expr(Node *node)
         printf("    mov %%rdi, (%%rax)\n");
         printf("    push %%rdi\n");
         return;
+    case ND_FUNCALL:
+        printf("    mov $0, %%rax\n");
+        printf("    call %s\n", node->funcname);
+        printf("    push %%rax\n");
+        return;
     }
 
     // First compute lhs and rhs, top 2 values on stack shuold be rhs, lhs, ...

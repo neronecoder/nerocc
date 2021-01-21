@@ -108,6 +108,7 @@ typedef enum
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement #follow not sure what this is for
     ND_BLOCK,     // block {...}
+    ND_FUNCALL,   // Function call
     ND_IF,        // if
     ND_FOR,       // for
     ND_WHILE,     // while
@@ -135,6 +136,10 @@ struct Node
 
     // Block
     Node *body;
+
+    // Function call
+    char *funcname;
+
     Var *var; // used if kind == ND_VAR
     int val;
 };
@@ -196,7 +201,8 @@ char *get_ident(Token *tok);
  * add          = mul ("+" mul | "-" mul)*
  * mul          = unary ("*" unary | "/" unary)*
  * unary        = ("+" | "-" | "*" | "&")? unary | primary
- * primary      = num | ident | "(" expr ")"
+ * primary      = num | ident args? | "(" expr ")"
+ * args         = "(" ")"
  */
 
 void print_node(Token *cur, const char *func);

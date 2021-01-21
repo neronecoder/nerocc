@@ -511,6 +511,16 @@ Node *primary(Token **cur, Token *tok)
 
     if (tok->kind == TK_IDENT)
     {
+        // Check func call
+        if (equal(tok->next, "("))
+        {
+            Node *node = new_node(ND_FUNCALL);
+            node->funcname = strndup(tok->loc, tok->len);
+            *cur = skip(tok->next->next, ")");
+            return node;
+        }
+
+        // Variable
         Node *node = new_node(ND_VAR);
         Var *var = find_var(tok);
         if (!var)
