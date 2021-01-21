@@ -516,7 +516,8 @@ Node *primary(Token **cur, Token *tok)
         {
             Node *node = new_node(ND_FUNCALL);
             node->funcname = strndup(tok->loc, tok->len);
-            *cur = skip(tok->next->next, ")");
+            node->args = func_args(&tok, tok->next);
+            *cur = tok;
             return node;
         }
 
@@ -539,4 +540,26 @@ Node *primary(Token **cur, Token *tok)
     }
 
     error("Expected an expression");
+}
+
+Node *func_args(Token **cur, Token *tok)
+{
+    Node head = {};
+    Node *cur_node = &head;
+
+    tok = skip(tok, "(");
+    int cnt = 0;
+    while (!equal(tok, ")"))
+    {
+        if (cnt++ > 0)
+        {
+            tok = skip(tok, ",");
+        }
+        cur_node->next = assign(&tok, tok);
+        cur_node = cur_node->next;
+    }
+
+    tok = skip(tok, ")");
+    *cur = tok;
+    return head.next;
 }

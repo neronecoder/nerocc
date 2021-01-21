@@ -139,6 +139,7 @@ struct Node
 
     // Function call
     char *funcname;
+    Node *args;
 
     Var *var; // used if kind == ND_VAR
     int val;
@@ -201,8 +202,8 @@ char *get_ident(Token *tok);
  * add          = mul ("+" mul | "-" mul)*
  * mul          = unary ("*" unary | "/" unary)*
  * unary        = ("+" | "-" | "*" | "&")? unary | primary
- * primary      = num | ident args? | "(" expr ")"
- * args         = "(" ")"
+ * primary      = num | ident func-args? | "(" expr ")"
+ * func-args    = "(" (assign ("," assign)*)? ")"
  */
 
 void print_node(Token *cur, const char *func);
@@ -224,6 +225,7 @@ Node *add(Token **cur, Token *tok);
 Node *mul(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
+Node *func_args(Token **cur, Token *tok);
 
 Node *add_with_type(Node *lhs, Node *rhs);
 Node *sub_with_type(Node *lhs, Node *rhs);

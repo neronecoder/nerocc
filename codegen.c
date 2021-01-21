@@ -6,6 +6,8 @@ static int count()
     return i++;
 }
 
+static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+
 void gen_code(Function *prog)
 {
     assign_lvar_offsets(prog);
@@ -146,10 +148,25 @@ void gen_expr(Node *node)
         printf("    push %%rdi\n");
         return;
     case ND_FUNCALL:
+    {
+        int nargs = 0;
+        for (Node *arg = node->args; arg; arg = arg->next)
+        {
+            gen_expr(arg);
+            printf("    pop %%rax\n");
+            printf("    push %%rax\n");
+            nargs++;
+        }
+
+        for (int i = nargs - 1; i >= 0; i--)
+        {
+            printf("    pop %s\n", argreg[i]);
+        }
         printf("    mov $0, %%rax\n");
         printf("    call %s\n", node->funcname);
         printf("    push %%rax\n");
         return;
+    }
     }
 
     // First compute lhs and rhs, top 2 values on stack shuold be rhs, lhs, ...
