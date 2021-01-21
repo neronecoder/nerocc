@@ -39,11 +39,12 @@ Node *new_var_node(Var *var)
     return node;
 }
 
-Var *new_var(char *name)
+Var *new_var(char *name, Type *ty)
 {
     Var *var = calloc(1, sizeof(Var));
     var->name = name;
     var->next = locals;
+    var->ty = ty;
     locals = var;
     return var;
 }
@@ -58,6 +59,11 @@ Var *find_var(Token *tok)
         }
     }
     return NULL;
+}
+
+char *get_ident(Token *tok)
+{
+    return strndup(tok->loc, tok->len);
 }
 
 /* Grammar
@@ -107,6 +113,66 @@ Function *parse(Token *tok)
 //        -----
 //       |     |
 //      mul0    mul1
+
+Type *declspec(Token **cur, Token *tok)
+{
+    *cur = skip(tok, "int");
+    return ty_int;
+}
+
+Type *declarator(Token **cur, Token *tok, Type *ty)
+{
+    while (consume(&tok, tok, "*"))
+    {
+        ty = pointer_to(ty);
+    }
+
+    if (tok->kind != TK_IDENT)
+    {
+        error("Expected a variable name.");
+    }
+
+    ty->name = tok;
+    *cur = tok->next;
+    return ty;
+}
+
+Node *declaration(Token **cur, Token *tok)
+{
+    Type *base_ty = declspec(&tok, tok);
+
+    Node head = {};
+    Node *cur_node = &head;
+
+    int cnt = 0;
+    while (!equal(tok, ";"))
+    {
+        if (cnt++ > 0)
+        {
+            tok = skip(tok, ",");
+        }
+
+        Type *ty = declarator(&tok, tok, base_ty);
+        Var *var = new_var(get_ident(ty->name), ty);
+
+        if (!equal(tok, "="))
+        {
+            continue;
+        }
+
+        Node *lhs = new_var_node(var);
+        Node *rhs = assign(&tok, tok->next);
+        Node *node = new_binary(ND_ASSIGN, lhs, rhs);
+
+        cur_node->next = new_unary(ND_EXPR_STMT, node);
+        cur_node = cur_node->next;
+    }
+
+    Node *node = new_node(ND_BLOCK);
+    node->body = head.next;
+    *cur = tok->next;
+    return node;
+}
 
 Node *stmt(Token **cur, Token *tok)
 {
@@ -180,7 +246,14 @@ Node *compound_stmt(Token **cur, Token *tok)
 
     while (!equal(tok, "}"))
     {
-        t->next = stmt(&tok, tok);
+        if (equal(tok, "int"))
+        {
+            t->next = declaration(&tok, tok);
+        }
+        else
+        {
+            t->next = stmt(&tok, tok);
+        }
         t = t->next;
         add_type(t);
     }
@@ -442,7 +515,7 @@ Node *primary(Token **cur, Token *tok)
         Var *var = find_var(tok);
         if (!var)
         {
-            var = new_var(strndup(tok->loc, tok->len));
+            error("Undefined variable '%s'", strndup(tok->loc, tok->len));
         }
         *cur = tok->next;
         return new_var_node(var);

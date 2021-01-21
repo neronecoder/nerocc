@@ -33,10 +33,12 @@ struct Type
 {
     TypeKind kind;
     Type *base;
+    Token *name;
 };
 
 extern Type *ty_int;
 bool is_integer(Type *ty);
+Type *pointer_to(Type *base);
 void add_type(Node *node);
 
 // Tokenizer
@@ -57,6 +59,8 @@ struct Token
     char *loc;
     size_t len;
 };
+
+bool consume(Token **cur, Token *tok, char *str);
 
 Token *new_token(TokenKind kind, char *start, char *end);
 
@@ -140,6 +144,7 @@ struct Var
 {
     Var *next;
     char *name;
+    Type *ty;
     int offset; // offset from rbp
 };
 
@@ -166,18 +171,23 @@ Node *new_num(int val);
 Node *new_var_node(Var *var);
 
 // Functions for variable
-Var *new_var(char *name);
+Var *new_var(char *name, Type *ty);
 Var *find_var(Token *tok);
+
+char *get_ident(Token *tok);
 
 /* Grammar
  * program      = stmt*
+ * declspec     = "int"
+ * declarator   = "*"* ident
+ * declaration  = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * stmt         = "return" expr ";" 
  *              | "{" compound-stmt
  *              | "if" "(" expr ")" stmt ("else" stmt)?
  *              | "for" "(" expr-stmt expr? ";" expr? ")" stmt
  *              | "while" "(" expr ")" stmt
  *              | exprexpr-stmt
- * compound-stmt = stmt* "}"
+ * compound-stmt = (declaration | stmt)* "}"
  * expr-stmt    = expr? ";"
  * expr         = assign
  * assign       = equality ("=" assign)?
@@ -194,6 +204,9 @@ void print_node(Token *cur, const char *func);
 // Entry point for parsing
 Function *parse(Token *tok);
 
+Type *declspec(Token **cur, Token *tok);
+Type *declarator(Token **cur, Token *tok, Type *ty);
+Node *declaration(Token **cur, Token *tok);
 Node *stmt(Token **cur, Token *tok);
 Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
@@ -206,8 +219,8 @@ Node *mul(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
 
-Node *add_with_type(Node *lhs, Node*rhs);
-Node *sub_with_type(Node *lhs, Node*rhs);
+Node *add_with_type(Node *lhs, Node *rhs);
+Node *sub_with_type(Node *lhs, Node *rhs);
 
 // Code Generator
 
