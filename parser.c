@@ -66,19 +66,6 @@ char *get_ident(Token *tok)
     return strndup(tok->loc, tok->len);
 }
 
-/* Grammar
- * program      = stmt*
- * stmt         = expr-stmt
- * expr-stmt    = expr;
- * expr         = equality
- * equality     = relational ("==" relational | "!=" relational)*
- * relational   = add ("<" add | "<=" add | ">" add | ">=" add)*
- * add          = mul ("+" mul | "-" mul)*
- * mul          = unary ("*" unary | "/" unary)*
- * unary        = ("+" | "-")? unary | primary
- * primary      = num | "(" expr ")"
- */
-
 void print_node(Token *cur, const char *func)
 {
     if (LOG)
@@ -90,13 +77,32 @@ void print_node(Token *cur, const char *func)
 Function *parse(Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    // program will be "{" compound_stmt, i.e. "{" stmt* "}"
+    Function head = {};
+    Function *cur = &head;
+
+    while (tok->kind != TK_EOF)
+    {
+        cur->next = function(&tok, tok);
+        cur = cur->next;
+    }
+    return head.next;
+}
+
+Function *function(Token **cur, Token *tok)
+{
+    Type *ty = declspec(&tok, tok);
+    ty = declarator(&tok, tok, ty);
+
+    locals = NULL;
+
+    Function *func = calloc(1, sizeof(Function));
+    func->name = get_ident(ty->name);
+
     tok = skip(tok, "{");
 
-    Function *prog = calloc(1, sizeof(Function));
-    prog->body = compound_stmt(&tok, tok);
-    prog->locals = locals;
-    return prog;
+    func->body = compound_stmt(cur, tok);
+    func->locals = locals;
+    return func;
 }
 
 // Steps (Ex. add)
@@ -120,6 +126,17 @@ Type *declspec(Token **cur, Token *tok)
     return ty_int;
 }
 
+Type *type_suffix(Token **cur, Token *tok, Type *ty)
+{
+    if (equal(tok, "("))
+    {
+        *cur = skip(tok->next, ")");
+        return func_type(ty);
+    }
+    *cur = tok;
+    return ty;
+}
+
 Type *declarator(Token **cur, Token *tok, Type *ty)
 {
     while (consume(&tok, tok, "*"))
@@ -132,8 +149,8 @@ Type *declarator(Token **cur, Token *tok, Type *ty)
         error("Expected a variable name.");
     }
 
+    ty = type_suffix(cur, tok->next, ty);
     ty->name = tok;
-    *cur = tok->next;
     return ty;
 }
 

@@ -7,28 +7,32 @@ static int count()
 }
 
 static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+static Function *current_func;
 
 void gen_code(Function *prog)
 {
     assign_lvar_offsets(prog);
 
-    // required statements
-    printf(".globl main\n");
-    printf("main:\n");
+    for (Function *func = prog; func; func = func->next)
+    {
+        printf("    .globl %s\n", func->name);
+        printf("%s:\n", func->name);
+        current_func = func;
 
-    // Prologue
-    printf("    push %%rbp\n");
-    printf("    mov %%rsp, %%rbp\n");
-    printf("    sub $%d, %%rsp\n", prog->stack_size);
+        // Prolugue
+        printf("    push %%rbp\n");
+        printf("    mov %%rsp, %%rbp\n");
+        printf("    sub $%d, %%rsp\n", func->stack_size);
 
-    gen_stmt(prog->body);
+        // Emit code
+        gen_stmt(func->body);
 
-    // Jump here with return
-    printf(".L.return:\n");
-    // Epilogue
-    printf("    mov %%rbp, %%rsp\n");
-    printf("    pop %%rbp\n");
-    printf("    ret\n");
+        // Epilogue
+        printf(".L.return.%s:\n", func->name);
+        printf("    mov %%rbp, %%rsp\n");
+        printf("    pop %%rbp\n");
+        printf("    ret\n");
+    }
 }
 
 void gen_stmt(Node *node)
@@ -38,7 +42,7 @@ void gen_stmt(Node *node)
     case ND_RETURN:
         gen_expr(node->lhs);
         printf("    pop %%rax\n");
-        printf("    jmp .L.return\n");
+        printf("    jmp .L.return.%s\n", current_func->name);
         return;
     case ND_BLOCK:
         for (Node *n = node->body; n; n = n->next)
@@ -235,13 +239,16 @@ void gen_addr(Node *node)
 
 void assign_lvar_offsets(Function *prog)
 {
-    int offset = 0;
-    for (Var *var = prog->locals; var; var = var->next)
+    for (Function *func = prog; func; func = func->next)
     {
-        offset += 8;
-        var->offset = offset;
+        int offset = 0;
+        for (Var *var = func->locals; var; var = var->next)
+        {
+            offset += 8;
+            var->offset = offset;
+        }
+        func->stack_size = align_to(offset, 16);
     }
-    prog->stack_size = align_to(offset, 16);
 }
 
 int align_to(int offset, int align)

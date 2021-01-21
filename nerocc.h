@@ -27,18 +27,25 @@ typedef enum
 {
     TY_INT,
     TY_PTR,
+    TY_FUNC,
 } TypeKind;
 
 struct Type
 {
     TypeKind kind;
     Type *base;
+
+    // Declaration
     Token *name;
+
+    // Function type
+    Type *return_ty;
 };
 
 extern Type *ty_int;
 bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
+Type *func_type(Type *return_ty);
 void add_type(Node *node);
 
 // Tokenizer
@@ -157,6 +164,8 @@ struct Var
 // Function
 struct Function
 {
+    Function *next;
+    char *name;
     Node *body;
     Var *locals;
     int stack_size;
@@ -183,27 +192,28 @@ Var *find_var(Token *tok);
 char *get_ident(Token *tok);
 
 /* Grammar
- * program      = stmt*
- * declspec     = "int"
- * declarator   = "*"* ident
- * declaration  = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
- * stmt         = "return" expr ";" 
- *              | "{" compound-stmt
- *              | "if" "(" expr ")" stmt ("else" stmt)?
- *              | "for" "(" expr-stmt expr? ";" expr? ")" stmt
- *              | "while" "(" expr ")" stmt
- *              | exprexpr-stmt
- * compound-stmt = (declaration | stmt)* "}"
- * expr-stmt    = expr? ";"
- * expr         = assign
- * assign       = equality ("=" assign)?
- * equality     = relational ("==" relational | "!=" relational)*
- * relational   = add ("<" add | "<=" add | ">" add | ">=" add)*
- * add          = mul ("+" mul | "-" mul)*
- * mul          = unary ("*" unary | "/" unary)*
- * unary        = ("+" | "-" | "*" | "&")? unary | primary
- * primary      = num | ident func-args? | "(" expr ")"
- * func-args    = "(" (assign ("," assign)*)? ")"
+ * program              = function-definition*
+ * declspec             = "int"
+ * declarator           = "*"* ident ("(" ")")?
+ * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
+ * function-definition  = declspec declarator "{" compound-stmt
+ * stmt                 = "return" expr ";" 
+ *                      | "{" compound-stmt
+ *                      | "if" "(" expr ")" stmt ("else" stmt)?
+ *                      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
+ *                      | "while" "(" expr ")" stmt
+ *                      | exprexpr-stmt
+ * compound-stmt        = (declaration | stmt)* "}"
+ * expr-stmt            = expr? ";"
+ * expr                 = assign
+ * assign               = equality ("=" assign)?
+ * equality             = relational ("==" relational | "!=" relational)*
+ * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
+ * add                  = mul ("+" mul | "-" mul)*
+ * mul                  = unary ("*" unary | "/" unary)*
+ * unary                = ("+" | "-" | "*" | "&")? unary | primary
+ * primary              = num | ident func-args? | "(" expr ")"
+ * func-args            = "(" (assign ("," assign)*)? ")"
  */
 
 void print_node(Token *cur, const char *func);
@@ -211,6 +221,7 @@ void print_node(Token *cur, const char *func);
 // Entry point for parsing
 Function *parse(Token *tok);
 
+Function *function(Token **cur, Token *tok);
 Type *declspec(Token **cur, Token *tok);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok);
