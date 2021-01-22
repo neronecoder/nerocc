@@ -9,6 +9,7 @@ $(OBJS): nerocc.h
 
 test: nerocc
 	./test.sh
+	./test-driver.sh
 
 clean:
 	rm -f nerocc *.o *~ tmp*

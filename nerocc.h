@@ -350,7 +350,7 @@ bool is_typename(Token *tok);
  * ```
  * 
  */
-void gen_code(Obj *prog);
+void gen_code(Obj *prog, FILE *out);
 
 void emit_data(Obj *prog);
 void emit_text(Obj *prog);
