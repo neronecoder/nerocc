@@ -511,7 +511,23 @@ Node *unary(Token **cur, Token *tok)
         return new_unary(ND_ADDR, node);
     }
 
+    Node *node = postfix(&tok, tok);
+    *cur = tok;
+    return node;
+}
+
+Node *postfix(Token **cur, Token *tok)
+{
     Node *node = primary(&tok, tok);
+
+    while (equal(tok, "["))
+    {
+        // x[y] is short for *(x+y)
+        Token *start = tok;
+        Node *idx = expr(&tok, tok->next);
+        tok = skip(tok, "]");
+        node = new_unary(ND_DEREF, add_with_type(node, idx));
+    }
     *cur = tok;
     return node;
 }

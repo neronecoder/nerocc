@@ -226,7 +226,8 @@ char *get_ident(Token *tok);
  * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add                  = mul ("+" mul | "-" mul)*
  * mul                  = unary ("*" unary | "/" unary)*
- * unary                = ("+" | "-" | "*" | "&")? unary | primary
+ * unary                = ("+" | "-" | "*" | "&")? unary | postfix
+ * postfix              = primary ("[" expr "]")*
  * primary              = num | ident func-args? | "(" expr ")"
  * type-suffix          = "(" func-params
  *                      | "[" num "]" type-suffix
@@ -255,6 +256,7 @@ Node *relational(Token **cur, Token *tok);
 Node *add(Token **cur, Token *tok);
 Node *mul(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
+Node *postfix(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
 Type *type_suffix(Token **cur, Token *tok, Type *ty);
 Type *func_params(Token **cur, Token *tok, Type *ty);
