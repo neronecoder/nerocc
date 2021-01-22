@@ -229,7 +229,7 @@ char *get_ident(Token *tok);
  * unary                = ("+" | "-" | "*" | "&")? unary | primary
  * primary              = num | ident func-args? | "(" expr ")"
  * type-suffix          = "(" func-params
- *                      | "[" num "]"
+ *                      | "[" num "]" type-suffix
  *                      | ɛ
  * func-args            = "(" (assign ("," assign)*)? ")"
  * func-params          = (param ("," param)*)? ")"

@@ -568,7 +568,8 @@ Type *type_suffix(Token **cur, Token *tok, Type *ty)
     if (equal(tok, "["))
     {
         int sz = get_number(tok->next);
-        *cur = skip(tok->next->next, "]");
+        tok = skip(tok->next->next, "]");
+        ty = type_suffix(cur, tok, ty);
         return array_of(ty, sz);
     }
     *cur = tok;
