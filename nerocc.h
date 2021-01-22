@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
@@ -108,7 +109,9 @@ bool is_valid_ident1(char c);
 // check if the second, ... characters of identifier are valid
 bool is_valid_ident2(char c);
 
-Token *tokenize(char *p);
+Token *tokenize_file(char *filename);
+Token *tokenize(char *filename, char *p);
+char *read_file(char *filename);
 
 void convert_keyword(Token *tok);
 

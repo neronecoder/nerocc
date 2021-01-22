@@ -1,5 +1,10 @@
 #include "nerocc.h"
 
+// Input filename
+static char *current_filename;
+
+static char *current_input;
+
 bool consume(Token **cur, Token *tok, char *str)
 {
     if (equal(tok, str))
@@ -86,8 +91,15 @@ bool is_valid_ident2(char c)
     return is_valid_ident1(c) || ('0' <= c && c <= '9');
 }
 
-Token *tokenize(char *p)
+Token *tokenize_file(char *filename)
 {
+    return tokenize(filename, read_file(filename));
+}
+
+Token *tokenize(char *filename, char *p)
+{
+    current_filename = filename;
+    current_input = p;
     Token head = {};
     Token *cur = &head;
 
@@ -145,6 +157,55 @@ Token *tokenize(char *p)
     cur->next = new_token(TK_EOF, p, p);
     convert_keyword(head.next);
     return head.next;
+}
+
+char *read_file(char *filename)
+{
+    FILE *fp;
+
+    if (strcmp(filename, "-") == 0)
+    {
+        // By convention, read from stdin if a given filename is "-".
+        fp = stdin;
+    }
+    else
+    {
+        fp = fopen(filename, "r");
+        if (!fp)
+        {
+            error("Cannot open %s: %s", filename, strerror(errno));
+        }
+    }
+
+    char *buf;
+    size_t buflen;
+    FILE *out = open_memstream(&buf, &buflen);
+
+    for (;;)
+    {
+        char buf2[4096];
+        int n = fread(buf2, 1, sizeof(buf2), fp);
+        if (n == 0)
+        {
+            break;
+        }
+
+        fwrite(buf2, 1, n, out);
+    }
+
+    if (fp != stdin)
+    {
+        fclose(fp);
+    }
+
+    fflush(out);
+    if (buflen == 0 || buf[buflen - 1] != '\n')
+    {
+        fputc('\n', out);
+    }
+    fputc('\0', out);
+    fclose(out);
+    return buf;
 }
 
 bool is_keyword(Token *tok)
