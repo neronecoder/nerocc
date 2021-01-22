@@ -67,6 +67,7 @@ typedef enum
     TK_IDENT,   // Identifiers
     TK_KEYWORD, // Reserved keywords
     TK_PUNCT,   // Punctuators
+    TK_STR,     // String literals
     TK_NUM,     // Numeric literals
     TK_EOF,     // End-of-file markers
 } TokenKind;
@@ -78,6 +79,8 @@ struct Token
     int val;
     char *loc;
     size_t len;
+    Type *ty;  // Used if TK_STR
+    char *str; // String literal contents including teminating '\0'
 };
 
 bool consume(Token **cur, Token *tok, char *str);
@@ -108,6 +111,8 @@ bool is_valid_ident2(char c);
 Token *tokenize(char *p);
 
 void convert_keyword(Token *tok);
+
+Token *read_string_literal(char *start);
 
 // Parser
 
@@ -179,6 +184,9 @@ struct Obj
     // global variable or function
     bool is_function;
 
+    // Global variable
+    char *init_data;
+
     // Function
     Obj *params;
 
@@ -209,6 +217,9 @@ Obj *find_var(Token *tok);
 
 void create_param_lvars(Type *param);
 
+static char *new_unique_name();
+static Obj *new_anon_gvar(Type *ty);
+static Obj *new_string_literal(char *p, Type *ty);
 char *get_ident(Token *tok);
 
 /* Grammar
@@ -233,7 +244,7 @@ char *get_ident(Token *tok);
  * mul                  = unary ("*" unary | "/" unary)*
  * unary                = ("+" | "-" | "*" | "&")? unary | postfix
  * postfix              = primary ("[" expr "]")*
- * primary              = num | "sizeof" unary | ident func-args? | "(" expr ")"
+ * primary              = str | num | "sizeof" unary | ident func-args? | "(" expr ")"
  * type-suffix          = "(" func-params
  *                      | "[" num "]" type-suffix
  *                      | ɛ
@@ -272,7 +283,7 @@ Node *add_with_type(Node *lhs, Node *rhs);
 Node *sub_with_type(Node *lhs, Node *rhs);
 
 bool is_function(Token *tok);
-bool is_typename(Token* tok);
+bool is_typename(Token *tok);
 
 // Code Generator
 

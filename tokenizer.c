@@ -111,6 +111,14 @@ Token *tokenize(char *p)
             continue;
         }
 
+        if (*p == '"')
+        {
+            cur->next = read_string_literal(p);
+            cur = cur->next;
+            p += cur->len;
+            continue;
+        }
+
         // Variable
         int variable_len = read_ident(p);
         if (variable_len > 0)
@@ -153,4 +161,21 @@ void convert_keyword(Token *tok)
             cur->kind = TK_KEYWORD;
         }
     }
+}
+
+Token *read_string_literal(char *start)
+{
+    char *p = start + 1;
+    for (; *p != '"'; p++)
+    {
+        if (*p == '\n' || *p == '\0')
+        {
+            error("Unclosed string literal.");
+        }
+    }
+
+    Token *tok = new_token(TK_STR, start, p + 1);
+    tok->ty = array_of(ty_char, p - start);
+    tok->str = strndup(start + 1, p - start - 1);
+    return tok;
 }

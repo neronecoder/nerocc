@@ -95,6 +95,26 @@ void create_param_lvars(Type *param)
     }
 }
 
+static char *new_unique_name()
+{
+    static int id = 0;
+    char *buf = calloc(1, 20);
+    sprintf(buf, ".L.%d", id++);
+    return buf;
+}
+
+static Obj *new_anon_gvar(Type *ty)
+{
+    return new_gvar(new_unique_name(), ty);
+}
+
+static Obj *new_string_literal(char *p, Type *ty)
+{
+    Obj *var = new_anon_gvar(ty);
+    var->init_data = p;
+    return var;
+}
+
 char *get_ident(Token *tok)
 {
     return strndup(tok->loc, tok->len);
@@ -596,6 +616,13 @@ Node *primary(Token **cur, Token *tok)
         Node *node = new_num(tok->val);
         *cur = tok->next;
         return node;
+    }
+
+    if (tok->kind == TK_STR)
+    {
+        Obj *var = new_string_literal(tok->str, tok->ty);
+        *cur = tok->next;
+        return new_var_node(var);
     }
 
     if (equal(tok, "sizeof"))
