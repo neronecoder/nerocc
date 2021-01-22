@@ -137,37 +137,6 @@ Type *declspec(Token **cur, Token *tok)
     return ty_int;
 }
 
-Type *type_suffix(Token **cur, Token *tok, Type *ty)
-{
-    if (equal(tok, "("))
-    {
-        tok = tok->next;
-
-        Type head = {};
-        Type *cur_type = &head;
-
-        while (!equal(tok, ")"))
-        {
-            if (cur_type != &head)
-            {
-                tok = skip(tok, ",");
-            }
-
-            Type *base_ty = declspec(&tok, tok);
-            Type *ty = declarator(&tok, tok, base_ty);
-            cur_type->next = copy_type(ty);
-            cur_type = cur_type->next;
-        }
-        ty = func_type(ty);
-
-        *cur = skip(tok, ")");
-        ty->params = head.next;
-        return ty;
-    }
-    *cur = tok;
-    return ty;
-}
-
 Type *declarator(Token **cur, Token *tok, Type *ty)
 {
     while (consume(&tok, tok, "*"))
@@ -446,7 +415,7 @@ Node *add_with_type(Node *lhs, Node *rhs)
     }
 
     // multiply by 8
-    rhs = new_binary(ND_MUL, rhs, new_num(8));
+    rhs = new_binary(ND_MUL, rhs, new_num(lhs->ty->base->size));
     return new_binary(ND_ADD, lhs, rhs);
 }
 
@@ -470,7 +439,7 @@ Node *sub_with_type(Node *lhs, Node *rhs)
     // ptr - num
     if (lhs->ty->base && is_integer(rhs->ty))
     {
-        rhs = new_binary(ND_MUL, rhs, new_num(8));
+        rhs = new_binary(ND_MUL, rhs, new_num(lhs->ty->base->size));
         add_type(rhs);
         Node *node = new_binary(ND_SUB, lhs, rhs);
         node->ty = lhs->ty;
@@ -482,9 +451,9 @@ Node *sub_with_type(Node *lhs, Node *rhs)
     {
         Node *node = new_binary(ND_SUB, lhs, rhs);
         node->ty = ty_int;
-        return new_binary(ND_DIV, node, new_num(8));
+        return new_binary(ND_DIV, node, new_num(lhs->ty->base->size));
     }
-    rhs = new_binary(ND_MUL, rhs, new_num(8));
+    rhs = new_binary(ND_MUL, rhs, new_num(lhs->ty->base->size));
     return new_binary(ND_ADD, lhs, rhs);
 }
 
@@ -588,6 +557,46 @@ Node *primary(Token **cur, Token *tok)
     }
 
     error("Expected an expression");
+}
+
+Type *type_suffix(Token **cur, Token *tok, Type *ty)
+{
+    if (equal(tok, "("))
+    {
+        return func_params(cur, tok->next, ty);
+    }
+    if (equal(tok, "["))
+    {
+        int sz = get_number(tok->next);
+        *cur = skip(tok->next->next, "]");
+        return array_of(ty, sz);
+    }
+    *cur = tok;
+    return ty;
+}
+
+Type *func_params(Token **cur, Token *tok, Type *ty)
+{
+    Type head = {};
+    Type *cur_type = &head;
+
+    while (!equal(tok, ")"))
+    {
+        if (cur_type != &head)
+        {
+            tok = skip(tok, ",");
+        }
+
+        Type *base_ty = declspec(&tok, tok);
+        Type *ty = declarator(&tok, tok, base_ty);
+        cur_type->next = copy_type(ty);
+        cur_type = cur_type->next;
+    }
+
+    ty = func_type(ty);
+    ty->params = head.next;
+    *cur = skip(tok, ")");
+    return ty;
 }
 
 Node *func_args(Token **cur, Token *tok)

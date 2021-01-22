@@ -28,15 +28,22 @@ typedef enum
     TY_INT,
     TY_PTR,
     TY_FUNC,
+    TY_ARRAY,
 } TypeKind;
 
 struct Type
 {
     TypeKind kind;
+
+    int size; // sizeof() value
+
     Type *base;
 
     // Declaration
     Token *name;
+
+    // Array
+    int array_len;
 
     // Function type
     Type *return_ty;
@@ -48,6 +55,7 @@ extern Type *ty_int;
 bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
+Type *array_of(Type *base, int len);
 void add_type(Node *node);
 Type *copy_type(Type *ty);
 
@@ -201,7 +209,7 @@ char *get_ident(Token *tok);
 /* Grammar
  * program              = function-definition*
  * declspec             = "int"
- * declarator           = "*"* ident ("(" func-params? ")")?
+ * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
  * stmt                 = "return" expr ";" 
@@ -220,8 +228,11 @@ char *get_ident(Token *tok);
  * mul                  = unary ("*" unary | "/" unary)*
  * unary                = ("+" | "-" | "*" | "&")? unary | primary
  * primary              = num | ident func-args? | "(" expr ")"
+ * type-suffix          = "(" func-params
+ *                      | "[" num "]"
+ *                      | ɛ
  * func-args            = "(" (assign ("," assign)*)? ")"
- * func-params          = param ("," param)*
+ * func-params          = (param ("," param)*)? ")"
  * param                = declspec delarator
  */
 
@@ -245,6 +256,8 @@ Node *add(Token **cur, Token *tok);
 Node *mul(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
+Type *type_suffix(Token **cur, Token *tok, Type *ty);
+Type *func_params(Token **cur, Token *tok, Type *ty);
 Node *func_args(Token **cur, Token *tok);
 
 Node *add_with_type(Node *lhs, Node *rhs);

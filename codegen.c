@@ -9,6 +9,15 @@ static int count()
 static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
 static Function *current_func;
 
+void load(Type *ty)
+{
+    if (ty->kind == TY_ARRAY)
+    {
+        return;
+    }
+    printf("    mov (%%rax), %%rax\n");
+}
+
 void gen_code(Function *prog)
 {
     assign_lvar_offsets(prog);
@@ -131,12 +140,12 @@ void gen_expr(Node *node)
     case ND_VAR:
         gen_addr(node);
         printf("    pop %%rax\n");
-        printf("    mov (%%rax), %%rax\n");
+        load(node->ty);
         printf("    push %%rax\n");
         return;
     case ND_DEREF:
         gen_expr(node->lhs);
-        printf("    mov  (%%rax), %%rax\n");
+        load(node->ty);
         printf("    push %%rax\n");
         return;
     case ND_ADDR:
@@ -250,7 +259,7 @@ void assign_lvar_offsets(Function *prog)
         int offset = 0;
         for (Var *var = func->locals; var; var = var->next)
         {
-            offset += 8;
+            offset += var->ty->size;
             var->offset = offset;
         }
         func->stack_size = align_to(offset, 16);
