@@ -7,7 +7,7 @@ static int count()
 }
 
 static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-static Function *current_func;
+static Obj *current_func;
 
 void load(Type *ty)
 {
@@ -18,13 +18,17 @@ void load(Type *ty)
     printf("    mov (%%rax), %%rax\n");
 }
 
-void gen_code(Function *prog)
+void gen_code(Obj *prog)
 {
     assign_lvar_offsets(prog);
 
-    for (Function *func = prog; func; func = func->next)
+    for (Obj *func = prog; func; func = func->next)
     {
+        if (!func->is_function) {
+            continue;
+        }
         printf("    .globl %s\n", func->name);
+        printf("    .text\n");
         printf("%s:\n", func->name);
         current_func = func;
 
@@ -35,7 +39,7 @@ void gen_code(Function *prog)
 
         // Save passed-by-register arguments to the stack
         int i = 0;
-        for (Var *var = func->params; var; var = var->next)
+        for (Obj *var = func->params; var; var = var->next)
         {
             printf("    mov %s, -%d(%%rbp)\n", argreg[i++], var->offset);
         }
@@ -252,12 +256,15 @@ void gen_addr(Node *node)
     }
 }
 
-void assign_lvar_offsets(Function *prog)
+void assign_lvar_offsets(Obj *prog)
 {
-    for (Function *func = prog; func; func = func->next)
+    for (Obj *func = prog; func; func = func->next)
     {
+        if (!func->is_function) {
+            continue;
+        }
         int offset = 0;
-        for (Var *var = func->locals; var; var = var->next)
+        for (Obj *var = func->locals; var; var = var->next)
         {
             offset += var->ty->size;
             var->offset = offset;

@@ -19,8 +19,7 @@ void error(char *fmt, ...);
 typedef struct Type Type;
 typedef struct Token Token;
 typedef struct Node Node;
-typedef struct Var Var;
-typedef struct Function Function;
+typedef struct Obj Obj;
 
 // Type
 typedef enum
@@ -130,7 +129,7 @@ typedef enum
     ND_IF,        // if
     ND_FOR,       // for
     ND_WHILE,     // while
-    ND_VAR,       // Variable
+    ND_VAR,       // Objiable
     ND_NUM,       // integer
 } NodeKind;
 
@@ -159,28 +158,29 @@ struct Node
     char *funcname;
     Node *args;
 
-    Var *var; // used if kind == ND_VAR
+    Obj *var; // used if kind == ND_VAR
     int val;
 };
 
-// Local Variable
-struct Var
+// Variable or function
+struct Obj
 {
-    Var *next;
+    Obj *next;
     char *name;
     Type *ty;
-    int offset; // offset from rbp
-};
+    bool is_local; // local or global/function
 
-// Function
-struct Function
-{
-    Function *next;
-    char *name;
-    Var *params;
+    // local variable
+    int offset; // offset from rbp
+
+    // global variable or function
+    bool is_function;
+
+    // Function
+    Obj *params;
 
     Node *body;
-    Var *locals;
+    Obj *locals;
     int stack_size;
 };
 
@@ -196,18 +196,20 @@ Node *new_unary(NodeKind kind, Node *expr);
 Node *new_num(int val);
 
 // identifier
-Node *new_var_node(Var *var);
+Node *new_var_node(Obj *var);
 
 // Functions for variable
-Var *new_var(char *name, Type *ty);
-Var *find_var(Token *tok);
+Obj *new_var(char *name, Type *ty);
+Obj *new_lvar(char *name, Type *ty);
+Obj *new_gvar(char *name, Type *ty);
+Obj *find_var(Token *tok);
 
 void create_param_lvars(Type *param);
 
 char *get_ident(Token *tok);
 
 /* Grammar
- * program              = function-definition*
+ * program              = (function-definition | global-variable)*
  * declspec             = "int"
  * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
@@ -240,9 +242,9 @@ char *get_ident(Token *tok);
 void print_node(Token *cur, const char *func);
 
 // Entry point for parsing
-Function *parse(Token *tok);
+Obj *parse(Token *tok);
 
-Function *function(Token **cur, Token *tok);
+Token *function(Token *tok, Type *base_ty);
 Type *declspec(Token **cur, Token *tok);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok);
@@ -318,12 +320,12 @@ Node *sub_with_type(Node *lhs, Node *rhs);
  * ```
  * 
  */
-void gen_code(Function *prog);
+void gen_code(Obj *prog);
 
 void gen_stmt(Node *node);
 void gen_expr(Node *node);
 void gen_addr(Node *node);
 
-void assign_lvar_offsets(Function *prog);
+void assign_lvar_offsets(Obj *prog);
 int align_to(int offset, int align);
 #endif

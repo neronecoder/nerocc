@@ -1,6 +1,7 @@
 #include "nerocc.h"
 
-Var *locals;
+Obj *locals;
+Obj *globals;
 
 Node *new_node(NodeKind kind)
 {
@@ -32,26 +33,42 @@ Node *new_num(int val)
     return node;
 }
 
-Node *new_var_node(Var *var)
+Node *new_var_node(Obj *var)
 {
     Node *node = new_node(ND_VAR);
     node->var = var;
     return node;
 }
 
-Var *new_var(char *name, Type *ty)
+Obj *new_lvar(char *name, Type *ty)
 {
-    Var *var = calloc(1, sizeof(Var));
-    var->name = name;
+    Obj *var = new_var(name, ty);
+    var->is_local = true;
     var->next = locals;
-    var->ty = ty;
     locals = var;
     return var;
 }
 
-Var *find_var(Token *tok)
+Obj *new_gvar(char *name, Type *ty)
 {
-    for (Var *var = locals; var; var = var->next)
+    Obj *var = new_var(name, ty);
+    var->is_local = false;
+    var->next = globals;
+    globals = var;
+    return var;
+}
+
+Obj *new_var(char *name, Type *ty)
+{
+    Obj *var = calloc(1, sizeof(Obj));
+    var->name = name;
+    var->ty = ty;
+    return var;
+}
+
+Obj *find_var(Token *tok)
+{
+    for (Obj *var = locals; var; var = var->next)
     {
         if (strlen(var->name) == tok->len && strncmp(tok->loc, var->name, tok->len) == 0)
         {
@@ -66,7 +83,7 @@ void create_param_lvars(Type *param)
     if (param)
     {
         create_param_lvars(param->next);
-        new_var(get_ident(param->name), param);
+        new_lvar(get_ident(param->name), param);
     }
 }
 
@@ -83,37 +100,36 @@ void print_node(Token *cur, const char *func)
     }
 }
 
-Function *parse(Token *tok)
+Obj *parse(Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    Function head = {};
-    Function *cur = &head;
+    globals = NULL;
 
     while (tok->kind != TK_EOF)
     {
-        cur->next = function(&tok, tok);
-        cur = cur->next;
+        Type *base_ty = declspec(&tok, tok);
+        tok = function(tok, base_ty);
     }
-    return head.next;
+    return globals;
 }
 
-Function *function(Token **cur, Token *tok)
+Token *function(Token *tok, Type *base_ty)
 {
-    Type *ty = declspec(&tok, tok);
-    ty = declarator(&tok, tok, ty);
+    Type *ty = declarator(&tok, tok, base_ty);
+
+    Obj *func = new_gvar(get_ident(ty->name), ty);
+    func->is_function = true;
 
     locals = NULL;
 
-    Function *func = calloc(1, sizeof(Function));
-    func->name = get_ident(ty->name);
     create_param_lvars(ty->params);
     func->params = locals;
 
     tok = skip(tok, "{");
 
-    func->body = compound_stmt(cur, tok);
+    func->body = compound_stmt(&tok, tok);
     func->locals = locals;
-    return func;
+    return tok;
 }
 
 // Steps (Ex. add)
@@ -170,7 +186,7 @@ Node *declaration(Token **cur, Token *tok)
         }
 
         Type *ty = declarator(&tok, tok, base_ty);
-        Var *var = new_var(get_ident(ty->name), ty);
+        Obj *var = new_lvar(get_ident(ty->name), ty);
 
         if (!equal(tok, "="))
         {
@@ -563,7 +579,7 @@ Node *primary(Token **cur, Token *tok)
 
         // Variable
         Node *node = new_node(ND_VAR);
-        Var *var = find_var(tok);
+        Obj *var = find_var(tok);
         if (!var)
         {
             error("Undefined variable '%s'", strndup(tok->loc, tok->len));
