@@ -230,6 +230,13 @@ void gen_expr(Node *node)
         store(node->ty);
         printf("    push %%rdi\n");
         return;
+    case ND_STMT_EXPR:
+        for (Node *n = node->body; n; n = n->next)
+        {
+            gen_stmt(n);
+        }
+        printf("    push %%rax\n");
+        return;
     case ND_FUNCALL:
     {
         int nargs = 0;

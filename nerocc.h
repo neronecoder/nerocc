@@ -134,7 +134,8 @@ typedef enum
     ND_ADDR,      // unary &
     ND_DEREF,     // unary *
     ND_RETURN,    // return
-    ND_EXPR_STMT, // Expression statement #follow not sure what this is for
+    ND_EXPR_STMT, // Expression statement # follow not sure what this is for
+    ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for
     ND_BLOCK,     // block {...}
     ND_FUNCALL,   // Function call
     ND_IF,        // if
@@ -162,7 +163,7 @@ struct Node
     Node *init;
     Node *inc;
 
-    // Block
+    // Block or statement expression
     Node *body;
 
     // Function call
@@ -247,7 +248,12 @@ char *get_ident(Token *tok);
  * mul                  = unary ("*" unary | "/" unary)*
  * unary                = ("+" | "-" | "*" | "&")? unary | postfix
  * postfix              = primary ("[" expr "]")*
- * primary              = str | num | "sizeof" unary | ident func-args? | "(" expr ")"
+ * primary              = "(" "{" stmt+ "}" ")"
+ *                      | "(" expr ")"
+ *                      | "sizeof" unary
+ *                      | ident func-args?
+ *                      | str
+ *                      | num 
  * type-suffix          = "(" func-params
  *                      | "[" num "]" type-suffix
  *                      | ɛ

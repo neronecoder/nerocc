@@ -655,6 +655,13 @@ Node *primary(Token **cur, Token *tok)
         return new_var_node(var);
     }
 
+    if (equal(tok, "(") && equal(tok->next, "{"))
+    {
+        Node *node = new_node(ND_STMT_EXPR);
+        node->body = compound_stmt(&tok, tok->next->next)->body;
+        *cur = skip(tok, ")");
+        return node;
+    }
     if (equal(tok, "("))
     {
         Node *node = expr(&tok, tok->next);
