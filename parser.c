@@ -166,6 +166,12 @@ Token *function(Token *tok, Type *base_ty)
 
 Type *declspec(Token **cur, Token *tok)
 {
+    if (equal(tok, "char"))
+    {
+        *cur = tok->next;
+        return ty_char;
+    }
+
     *cur = skip(tok, "int");
     return ty_int;
 }
@@ -313,7 +319,7 @@ Node *compound_stmt(Token **cur, Token *tok)
 
     while (!equal(tok, "}"))
     {
-        if (equal(tok, "int"))
+        if (is_typename(tok))
         {
             t->next = declaration(&tok, tok);
         }
@@ -705,4 +711,9 @@ bool is_function(Token *tok)
     Type dummy = {};
     Type *ty = declarator(&tok, tok, &dummy);
     return ty->kind == TY_FUNC;
+}
+
+bool is_typename(Token *tok)
+{
+    return equal(tok, "char") || equal(tok, "int");
 }

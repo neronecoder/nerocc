@@ -24,6 +24,7 @@ typedef struct Obj Obj;
 // Type
 typedef enum
 {
+    TY_CHAR,
     TY_INT,
     TY_PTR,
     TY_FUNC,
@@ -50,7 +51,9 @@ struct Type
     Type *next;
 };
 
+extern Type *ty_char;
 extern Type *ty_int;
+
 bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
@@ -210,7 +213,7 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = "int"
+ * declspec             = "char" | "int"
  * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
@@ -269,6 +272,7 @@ Node *add_with_type(Node *lhs, Node *rhs);
 Node *sub_with_type(Node *lhs, Node *rhs);
 
 bool is_function(Token *tok);
+bool is_typename(Token* tok);
 
 // Code Generator
 
