@@ -3,6 +3,8 @@
 Obj *locals;
 Obj *globals;
 
+static Scope *scope = &(Scope){};
+
 Node *new_node(NodeKind kind)
 {
     Node *node = calloc(1, sizeof(Node));
@@ -63,27 +65,45 @@ Obj *new_var(char *name, Type *ty)
     Obj *var = calloc(1, sizeof(Obj));
     var->name = name;
     var->ty = ty;
+    push_scope(name, var);
     return var;
 }
 
 Obj *find_var(Token *tok)
 {
-    for (Obj *var = locals; var; var = var->next)
+    for (Scope *sc = scope; sc; sc = sc->next)
     {
-        if (strlen(var->name) == tok->len && strncmp(tok->loc, var->name, tok->len) == 0)
+        for (VarScope *sc2 = sc->vars; sc2; sc2 = sc2->next)
         {
-            return var;
-        }
-    }
-
-    for (Obj *var = globals; var; var = var->next)
-    {
-        if (strlen(var->name) == tok->len && strncmp(tok->loc, var->name, tok->len) == 0)
-        {
-            return var;
+            if (equal(tok, sc2->name))
+            {
+                return sc2->var;
+            }
         }
     }
     return NULL;
+}
+
+void enter_scope()
+{
+    Scope *sc = calloc(1, sizeof(Scope));
+    sc->next = scope;
+    scope = sc;
+}
+
+void leave_scope()
+{
+    scope = scope->next;
+}
+
+VarScope *push_scope(char *name, Obj *var)
+{
+    VarScope *sc = calloc(1, sizeof(VarScope));
+    sc->name = name;
+    sc->var = var;
+    sc->next = scope->vars;
+    scope->vars = sc;
+    return sc;
 }
 
 void create_param_lvars(Type *param)
@@ -159,6 +179,8 @@ Token *function(Token *tok, Type *base_ty)
 
     locals = NULL;
 
+    enter_scope();
+
     create_param_lvars(ty->params);
     func->params = locals;
 
@@ -166,6 +188,7 @@ Token *function(Token *tok, Type *base_ty)
 
     func->body = compound_stmt(&tok, tok);
     func->locals = locals;
+    leave_scope();
     return tok;
 }
 
@@ -337,6 +360,8 @@ Node *compound_stmt(Token **cur, Token *tok)
     Node head = {};
     Node *t = &head;
 
+    enter_scope();
+
     while (!equal(tok, "}"))
     {
         if (is_typename(tok))
@@ -350,6 +375,8 @@ Node *compound_stmt(Token **cur, Token *tok)
         t = t->next;
         add_type(t);
     }
+
+    leave_scope();
 
     Node *node = new_node(ND_BLOCK);
     node->body = head.next;

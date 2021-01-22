@@ -21,6 +21,8 @@ typedef struct Type Type;
 typedef struct Token Token;
 typedef struct Node Node;
 typedef struct Obj Obj;
+typedef struct VarScope VarScope;
+typedef struct Scope Scope;
 
 // Type
 typedef enum
@@ -202,6 +204,19 @@ struct Obj
     int stack_size;
 };
 
+struct VarScope
+{
+    VarScope *next;
+    char *name;
+    Obj *var;
+};
+
+struct Scope
+{
+    Scope *next;
+    VarScope *vars;
+};
+
 // Functions for node creation
 Node *new_node(NodeKind kind);
 
@@ -296,6 +311,10 @@ Node *sub_with_type(Node *lhs, Node *rhs);
 
 bool is_function(Token *tok);
 bool is_typename(Token *tok);
+
+void enter_scope();
+void leave_scope();
+VarScope *push_scope(char *name, Obj *var);
 
 // Code Generator
 
