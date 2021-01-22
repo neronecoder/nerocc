@@ -542,6 +542,13 @@ Node *primary(Token **cur, Token *tok)
         return node;
     }
 
+    if (equal(tok, "sizeof"))
+    {
+        Node *node = unary(cur, tok->next);
+        add_type(node);
+        return new_num(node->ty->size);
+    }
+
     if (tok->kind == TK_IDENT)
     {
         // Check func call

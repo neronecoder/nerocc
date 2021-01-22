@@ -228,7 +228,7 @@ char *get_ident(Token *tok);
  * mul                  = unary ("*" unary | "/" unary)*
  * unary                = ("+" | "-" | "*" | "&")? unary | postfix
  * postfix              = primary ("[" expr "]")*
- * primary              = num | ident func-args? | "(" expr ")"
+ * primary              = num | "sizeof" unary | ident func-args? | "(" expr ")"
  * type-suffix          = "(" func-params
  *                      | "[" num "]" type-suffix
  *                      | ɛ

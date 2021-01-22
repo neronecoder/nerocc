@@ -141,7 +141,7 @@ Token *tokenize(char *p)
 
 bool is_keyword(Token *tok)
 {
-    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "int");
+    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "int") || equal(tok, "sizeof");
 }
 
 void convert_keyword(Token *tok)
