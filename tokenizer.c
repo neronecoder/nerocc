@@ -221,6 +221,24 @@ int read_escaped_char(char **new_pos, char *p)
         return c;
     }
 
+    if (*p == 'x')
+    {
+        // Read a hexadecimal number.
+        p++;
+        if (!isxdigit(*p))
+        {
+            error("Invalid hex escape sequence.");
+        }
+
+        int c = 0;
+        for (; isxdigit(*p); p++)
+        {
+            c = (c << 4) + from_hex(*p);
+        }
+        *new_pos = p;
+        return c;
+    }
+
     *new_pos = p + 1;
     switch (*p)
     {
@@ -243,4 +261,17 @@ int read_escaped_char(char **new_pos, char *p)
     default:
         return *p;
     }
+}
+
+int from_hex(char c)
+{
+    if ('0' <= c && c <= '9')
+    {
+        return c - '0';
+    }
+    if ('a' <= c && c <= 'f')
+    {
+        return c - 'a' + 10;
+    }
+    return c - 'A' + 10;
 }

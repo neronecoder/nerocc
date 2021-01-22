@@ -115,6 +115,7 @@ void convert_keyword(Token *tok);
 Token *read_string_literal(char *p);
 char *string_literal_end(char *p);
 int read_escaped_char(char **new_pos, char *p);
+int from_hex(char c);
 
 // Parser
 
