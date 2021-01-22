@@ -61,6 +61,15 @@ Var *find_var(Token *tok)
     return NULL;
 }
 
+void create_param_lvars(Type *param)
+{
+    if (param)
+    {
+        create_param_lvars(param->next);
+        new_var(get_ident(param->name), param);
+    }
+}
+
 char *get_ident(Token *tok)
 {
     return strndup(tok->loc, tok->len);
@@ -97,6 +106,8 @@ Function *function(Token **cur, Token *tok)
 
     Function *func = calloc(1, sizeof(Function));
     func->name = get_ident(ty->name);
+    create_param_lvars(ty->params);
+    func->params = locals;
 
     tok = skip(tok, "{");
 
@@ -130,8 +141,28 @@ Type *type_suffix(Token **cur, Token *tok, Type *ty)
 {
     if (equal(tok, "("))
     {
-        *cur = skip(tok->next, ")");
-        return func_type(ty);
+        tok = tok->next;
+
+        Type head = {};
+        Type *cur_type = &head;
+
+        while (!equal(tok, ")"))
+        {
+            if (cur_type != &head)
+            {
+                tok = skip(tok, ",");
+            }
+
+            Type *base_ty = declspec(&tok, tok);
+            Type *ty = declarator(&tok, tok, base_ty);
+            cur_type->next = copy_type(ty);
+            cur_type = cur_type->next;
+        }
+        ty = func_type(ty);
+
+        *cur = skip(tok, ")");
+        ty->params = head.next;
+        return ty;
     }
     *cur = tok;
     return ty;

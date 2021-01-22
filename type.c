@@ -43,6 +43,11 @@ void add_type(Node *node)
         add_type(n);
     }
 
+    for (Node *n = node->args; n; n = n->next)
+    {
+        add_type(n);
+    }
+
     switch (node->kind)
     {
     case ND_ADD:
@@ -75,4 +80,11 @@ void add_type(Node *node)
         node->ty = node->lhs->ty->base;
         return;
     }
+}
+
+Type *copy_type(Type *ty)
+{
+    Type *copied_ty = calloc(1, sizeof(Type));
+    *copied_ty = *ty;
+    return copied_ty;
 }

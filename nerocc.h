@@ -40,6 +40,8 @@ struct Type
 
     // Function type
     Type *return_ty;
+    Type *params;
+    Type *next;
 };
 
 extern Type *ty_int;
@@ -47,6 +49,7 @@ bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
 void add_type(Node *node);
+Type *copy_type(Type *ty);
 
 // Tokenizer
 typedef enum
@@ -166,6 +169,8 @@ struct Function
 {
     Function *next;
     char *name;
+    Var *params;
+
     Node *body;
     Var *locals;
     int stack_size;
@@ -189,12 +194,14 @@ Node *new_var_node(Var *var);
 Var *new_var(char *name, Type *ty);
 Var *find_var(Token *tok);
 
+void create_param_lvars(Type *param);
+
 char *get_ident(Token *tok);
 
 /* Grammar
  * program              = function-definition*
  * declspec             = "int"
- * declarator           = "*"* ident ("(" ")")?
+ * declarator           = "*"* ident ("(" func-params? ")")?
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
  * stmt                 = "return" expr ";" 
@@ -214,6 +221,8 @@ char *get_ident(Token *tok);
  * unary                = ("+" | "-" | "*" | "&")? unary | primary
  * primary              = num | ident func-args? | "(" expr ")"
  * func-args            = "(" (assign ("," assign)*)? ")"
+ * func-params          = param ("," param)*
+ * param                = declspec delarator
  */
 
 void print_node(Token *cur, const char *func);
