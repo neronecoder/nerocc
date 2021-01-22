@@ -248,6 +248,7 @@ Token *function(Token *tok, Type *base_ty);
 Type *declspec(Token **cur, Token *tok);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok);
+Token *global_variable(Token *tok, Type *base_ty);
 Node *stmt(Token **cur, Token *tok);
 Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
@@ -266,6 +267,8 @@ Node *func_args(Token **cur, Token *tok);
 
 Node *add_with_type(Node *lhs, Node *rhs);
 Node *sub_with_type(Node *lhs, Node *rhs);
+
+bool is_function(Token *tok);
 
 // Code Generator
 
@@ -322,6 +325,8 @@ Node *sub_with_type(Node *lhs, Node *rhs);
  */
 void gen_code(Obj *prog);
 
+void emit_data(Obj *prog);
+void emit_text(Obj *prog);
 void gen_stmt(Node *node);
 void gen_expr(Node *node);
 void gen_addr(Node *node);

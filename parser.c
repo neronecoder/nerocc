@@ -75,6 +75,14 @@ Obj *find_var(Token *tok)
             return var;
         }
     }
+
+    for (Obj *var = globals; var; var = var->next)
+    {
+        if (strlen(var->name) == tok->len && strncmp(tok->loc, var->name, tok->len) == 0)
+        {
+            return var;
+        }
+    }
     return NULL;
 }
 
@@ -108,7 +116,16 @@ Obj *parse(Token *tok)
     while (tok->kind != TK_EOF)
     {
         Type *base_ty = declspec(&tok, tok);
-        tok = function(tok, base_ty);
+
+        // Function
+        if (is_function(tok))
+        {
+            tok = function(tok, base_ty);
+            continue;
+        }
+
+        // Global variable
+        tok = global_variable(tok, base_ty);
     }
     return globals;
 }
@@ -205,6 +222,23 @@ Node *declaration(Token **cur, Token *tok)
     node->body = head.next;
     *cur = tok->next;
     return node;
+}
+
+Token *global_variable(Token *tok, Type *base_ty)
+{
+    int cnt = 0;
+
+    while (!consume(&tok, tok, ";"))
+    {
+        if (cnt++ > 0)
+        {
+            tok = skip(tok, ",");
+        }
+
+        Type *ty = declarator(&tok, tok, base_ty);
+        new_gvar(get_ident(ty->name), ty);
+    }
+    return tok;
 }
 
 Node *stmt(Token **cur, Token *tok)
@@ -659,4 +693,16 @@ Node *func_args(Token **cur, Token *tok)
     tok = skip(tok, ")");
     *cur = tok;
     return head.next;
+}
+
+bool is_function(Token *tok)
+{
+    if (equal(tok, ";"))
+    {
+        return false;
+    }
+
+    Type dummy = {};
+    Type *ty = declarator(&tok, tok, &dummy);
+    return ty->kind == TY_FUNC;
 }

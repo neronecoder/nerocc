@@ -21,10 +21,30 @@ void load(Type *ty)
 void gen_code(Obj *prog)
 {
     assign_lvar_offsets(prog);
+    emit_data(prog);
+    emit_text(prog);
+}
 
+void emit_data(Obj *prog)
+{
+    for (Obj*var =prog;var;var=var->next) {
+        if (var->is_function) {
+            continue;
+        }
+
+        printf("    .data\n");
+        printf("    .globl %s\n", var->name);
+        printf("%s:\n", var->name);
+        printf("    .zero %d\n", var->ty->size);
+    }
+}
+
+void emit_text(Obj *prog)
+{
     for (Obj *func = prog; func; func = func->next)
     {
-        if (!func->is_function) {
+        if (!func->is_function)
+        {
             continue;
         }
         printf("    .globl %s\n", func->name);
@@ -245,11 +265,17 @@ void gen_addr(Node *node)
 {
     switch (node->kind)
     {
-    case ND_VAR:
-        printf("    mov %%rbp, %%rax\n");
-        printf("    sub $%d, %%rax\n", node->var->offset);
+    case ND_VAR: {
+        if (node->var->is_local) {
+            // Local variable
+            printf("    lea -%d(%%rbp), %%rax\n", node->var->offset);
+        } else {
+            // Global variable
+            printf("    lea %s(%%rip), %%rax\n", node->var->name);
+        }
         printf("    push %%rax\n");
         return;
+    }
     case ND_DEREF:
         gen_expr(node->lhs);
         return;
@@ -260,7 +286,8 @@ void assign_lvar_offsets(Obj *prog)
 {
     for (Obj *func = prog; func; func = func->next)
     {
-        if (!func->is_function) {
+        if (!func->is_function)
+        {
             continue;
         }
         int offset = 0;
