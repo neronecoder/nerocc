@@ -105,6 +105,28 @@ Token *tokenize(char *filename, char *p)
 
     while (*p)
     {
+        // Skip line comments.
+        if (starts_with(p, "//"))
+        {
+            p += 2;
+            while (*p != '\n')
+            {
+                p++;
+            }
+            continue;
+        }
+
+        // Skip block comments.
+        if (starts_with(p, "/*"))
+        {
+            char *q = strstr(p + 1, "*/");
+            if (!q)
+            {
+                error("Unclosed block comment.");
+            }
+            p = q + 2;
+            continue;
+        }
         // skip white spaces
         if (isspace(*p))
         {
