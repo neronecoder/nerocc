@@ -38,6 +38,7 @@ struct Type
     TypeKind kind;
 
     int size; // sizeof() value
+    int align;
 
     Type *base;
 
@@ -59,6 +60,7 @@ struct Type
 extern Type *ty_char;
 extern Type *ty_int;
 
+Type *new_type(TypeKind kind, int size, int align);
 bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
