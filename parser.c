@@ -251,6 +251,11 @@ Type *declspec(Token **cur, Token *tok)
         return struct_decl(cur, tok->next);
     }
 
+    if (equal(tok, "union"))
+    {
+        return union_decl(cur, tok->next);
+    }
+
     error("typename expected.");
 }
 
@@ -310,6 +315,50 @@ Node *declaration(Token **cur, Token *tok)
 
 Type *struct_decl(Token **cur, Token *tok)
 {
+    Type *ty = struct_or_union_decl(cur, tok);
+    ty->kind = TY_STRUCT;
+
+    // Assign offsets within the struct to members.
+    int offset = 0;
+    for (Member *mem = ty->members; mem; mem = mem->next)
+    {
+        offset = align_to(offset, mem->ty->align);
+        mem->offset = offset;
+        offset += mem->ty->size;
+
+        if (ty->align < mem->ty->align)
+        {
+            ty->align = mem->ty->align;
+        }
+    }
+    ty->size = align_to(offset, ty->align);
+    return ty;
+}
+
+Type *union_decl(Token **cur, Token *tok)
+{
+    Type *ty = struct_or_union_decl(cur, tok);
+    ty->kind = TY_UNION;
+
+    for (Member *mem = ty->members; mem; mem = mem->next)
+    {
+        if (ty->align < mem->ty->align)
+        {
+            ty->align = mem->ty->align;
+        }
+
+        if (ty->size < mem->ty->size)
+        {
+            ty->size = mem->ty->size;
+        }
+    }
+    ty->size = align_to(ty->size, ty->align);
+    return ty;
+}
+
+Type *struct_or_union_decl(Token **cur, Token *tok)
+{
+    // Read a tag
     Token *tag = NULL;
 
     if (tok->kind == TK_IDENT)
@@ -331,24 +380,8 @@ Type *struct_decl(Token **cur, Token *tok)
 
     // Construct a struct object
     Type *ty = calloc(1, sizeof(Type));
-    ty->kind = TY_STRUCT;
     struct_members(cur, tok->next, ty);
     ty->align = 1;
-
-    // Assign offsets within the struct to members.
-    int offset = 0;
-    for (Member *mem = ty->members; mem; mem = mem->next)
-    {
-        offset = align_to(offset, mem->ty->align);
-        mem->offset = offset;
-        offset += mem->ty->size;
-
-        if (ty->align < mem->ty->align)
-        {
-            ty->align = mem->ty->align;
-        }
-    }
-    ty->size = align_to(offset, ty->align);
 
     // Register the struct type if a name was given.
     if (tag)
@@ -390,9 +423,9 @@ void struct_members(Token **cur, Token *tok, Type *ty)
 Node *struct_ref(Node *lhs, Token *tok)
 {
     add_type(lhs);
-    if (lhs->ty->kind != TY_STRUCT)
+    if (lhs->ty->kind != TY_STRUCT && lhs->ty->kind != TY_UNION)
     {
-        error_tok(lhs->tok, "Not a struct.");
+        error_tok(lhs->tok, "Not a struct nor a union.");
     }
 
     Node *node = new_unary(ND_MEMBER, lhs, tok);
@@ -781,7 +814,8 @@ Node *postfix(Token **cur, Token *tok)
             continue;
         }
 
-        if (equal(tok, "->")) {
+        if (equal(tok, "->"))
+        {
             // x->y is short for *(x).y
             node = new_unary(ND_DEREF, node, tok);
             node = struct_ref(node, tok->next);
@@ -935,5 +969,5 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "char") || equal(tok, "int") || equal(tok, "struct");
+    return equal(tok, "char") || equal(tok, "int") || equal(tok, "struct") || equal(tok, "union");
 }

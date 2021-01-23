@@ -32,6 +32,7 @@ typedef enum
     TY_FUNC,
     TY_ARRAY,
     TY_STRUCT,
+    TY_UNION,
 } TypeKind;
 
 struct Type
@@ -290,7 +291,9 @@ char *get_ident(Token *tok);
  * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
- * struct-decl          = "struct" ident? "{" struct-members
+ * struct-decl          = "struct" struct-or-union-decl
+ * union-decl           = "union" struct-or-union-decl
+ * struct-or-union-decl = ident? ("{" struct-members)?
  * struct-members       = (declspec declarator ("," declarator)* ";")*
  * stmt                 = "return" expr ";" 
  *                      | "{" compound-stmt
@@ -332,6 +335,8 @@ Type *declspec(Token **cur, Token *tok);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok);
 Type *struct_decl(Token **cur, Token *tok);
+Type *union_decl(Token **cur, Token *tok);
+Type *struct_or_union_decl(Token **cur, Token *tok);
 void struct_members(Token **cur, Token *tok, Type *ty);
 Node *struct_ref(Node *lhs, Token *tok);
 Member *get_struct_member(Type *ty, Token *tok);
@@ -361,6 +366,8 @@ bool is_typename(Token *tok);
 void enter_scope();
 void leave_scope();
 VarScope *push_scope(char *name, Obj *var);
+
+// Scope for struct or union tag
 void push_tag_scope(Token *tok, Type *ty);
 
 // Code Generator
