@@ -21,6 +21,7 @@ typedef struct Obj Obj;
 typedef struct Member Member;
 typedef struct VarScope VarScope;
 typedef struct Scope Scope;
+typedef struct TagScope TagScope;
 
 // Type
 typedef enum
@@ -231,7 +232,10 @@ struct VarScope
 struct Scope
 {
     Scope *next;
+
+    // C has two block scopes, one is for variable and the other is for struct tag.
     VarScope *vars;
+    TagScope *tags;
 };
 
 // Struct member
@@ -243,9 +247,16 @@ struct Member
     int offset;
 };
 
+// Scope for struct tag
+struct TagScope
+{
+    TagScope *next;
+    char *name;
+    Type *ty;
+};
+
 // Functions for node creation
-Node *
-new_node(NodeKind kind, Token *tok);
+Node *new_node(NodeKind kind, Token *tok);
 
 // binary operator +, -, *, /
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
@@ -264,6 +275,8 @@ Obj *new_lvar(char *name, Type *ty);
 Obj *new_gvar(char *name, Type *ty);
 Obj *find_var(Token *tok);
 
+Type *find_tag(Token *tok);
+
 void create_param_lvars(Type *param);
 
 static char *new_unique_name();
@@ -277,7 +290,7 @@ char *get_ident(Token *tok);
  * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
- * struct-decl          = "{" struct-members
+ * struct-decl          = "struct" ident? "{" struct-members
  * struct-members       = (declspec declarator ("," declarator)* ";")*
  * stmt                 = "return" expr ";" 
  *                      | "{" compound-stmt
@@ -348,6 +361,7 @@ bool is_typename(Token *tok);
 void enter_scope();
 void leave_scope();
 VarScope *push_scope(char *name, Obj *var);
+void push_tag_scope(Token *tok, Type *ty);
 
 // Code Generator
 

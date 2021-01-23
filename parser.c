@@ -85,6 +85,21 @@ Obj *find_var(Token *tok)
     return NULL;
 }
 
+Type *find_tag(Token *tok)
+{
+    for (Scope *sc = scope; sc; sc = sc->next)
+    {
+        for (TagScope *sc2 = sc->tags; sc2; sc2 = sc2->next)
+        {
+            if (equal(tok, sc2->name))
+            {
+                return sc2->ty;
+            }
+        }
+    }
+    return NULL;
+}
+
 void enter_scope()
 {
     Scope *sc = calloc(1, sizeof(Scope));
@@ -105,6 +120,15 @@ VarScope *push_scope(char *name, Obj *var)
     sc->next = scope->vars;
     scope->vars = sc;
     return sc;
+}
+
+void push_tag_scope(Token *tok, Type *ty)
+{
+    TagScope *sc = calloc(1, sizeof(TagScope));
+    sc->name = strndup(tok->loc, tok->len);
+    sc->ty = ty;
+    sc->next = scope->tags;
+    scope->tags = sc;
 }
 
 void create_param_lvars(Type *param)
@@ -286,28 +310,51 @@ Node *declaration(Token **cur, Token *tok)
 
 Type *struct_decl(Token **cur, Token *tok)
 {
-    tok = skip(tok, "{");
+    Token *tag = NULL;
+
+    if (tok->kind == TK_IDENT)
+    {
+        tag = tok;
+        tok = tok->next;
+    }
+
+    if (tag && !equal(tok, "{"))
+    {
+        Type *ty = find_tag(tag);
+        if (!ty)
+        {
+            error_tok(tag, "Unknown struct type.");
+        }
+        *cur = tok;
+        return ty;
+    }
 
     // Construct a struct object
     Type *ty = calloc(1, sizeof(Type));
     ty->kind = TY_STRUCT;
-    struct_members(cur, tok, ty);
+    struct_members(cur, tok->next, ty);
     ty->align = 1;
 
     // Assign offsets within the struct to members.
     int offset = 0;
     for (Member *mem = ty->members; mem; mem = mem->next)
     {
-        offset =align_to(offset, mem->ty->align);
+        offset = align_to(offset, mem->ty->align);
         mem->offset = offset;
         offset += mem->ty->size;
 
-        if (ty->align < mem->ty->align) {
+        if (ty->align < mem->ty->align)
+        {
             ty->align = mem->ty->align;
         }
     }
     ty->size = align_to(offset, ty->align);
 
+    // Register the struct type if a name was given.
+    if (tag)
+    {
+        push_tag_scope(tag, ty);
+    }
     return ty;
 }
 
