@@ -72,6 +72,7 @@ int main(int argc, char **argv)
 
     // Traverse AST to emit assembly.
     FILE *out = open_file(opt_o);
+    fprintf(out, ".file 1 \"%s\"\n", input_path);
     gen_code(prog, out);
     return 0;
 }

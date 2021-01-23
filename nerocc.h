@@ -84,6 +84,8 @@ struct Token
     size_t len;
     Type *ty;  // Used if TK_STR
     char *str; // String literal contents including teminating '\0'
+
+    int line_no; // Line number
 };
 
 bool consume(Token **cur, Token *tok, char *str);
@@ -116,11 +118,17 @@ Token *tokenize(char *filename, char *p);
 char *read_file(char *filename);
 
 void convert_keyword(Token *tok);
+void add_line_numbers(Token *tok);
 
 Token *read_string_literal(char *p);
 char *string_literal_end(char *p);
 int read_escaped_char(char **new_pos, char *p);
 int from_hex(char c);
+
+// Input filename
+extern char *current_filename;
+
+extern char *current_input;
 
 // Parser
 
@@ -155,6 +163,7 @@ struct Node
     NodeKind kind; // Node kind
     Node *next;    // Next node
     Type *ty;      // Type after all evaluation.
+    Token *tok;
 
     Node *lhs;
     Node *rhs;
@@ -218,18 +227,18 @@ struct Scope
 };
 
 // Functions for node creation
-Node *new_node(NodeKind kind);
+Node *new_node(NodeKind kind, Token *tok);
 
 // binary operator +, -, *, /
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
+Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
 
-Node *new_unary(NodeKind kind, Node *expr);
+Node *new_unary(NodeKind kind, Node *expr, Token *tok);
 
 // integer
-Node *new_num(int val);
+Node *new_num(int val, Token *tok);
 
 // identifier
-Node *new_var_node(Obj *var);
+Node *new_var_node(Obj *var, Token *tok);
 
 // Functions for variable
 Obj *new_var(char *name, Type *ty);
@@ -306,8 +315,8 @@ Type *type_suffix(Token **cur, Token *tok, Type *ty);
 Type *func_params(Token **cur, Token *tok, Type *ty);
 Node *func_args(Token **cur, Token *tok);
 
-Node *add_with_type(Node *lhs, Node *rhs);
-Node *sub_with_type(Node *lhs, Node *rhs);
+Node *add_with_type(Node *lhs, Node *rhs, Token *tok);
+Node *sub_with_type(Node *lhs, Node *rhs, Token *tok);
 
 bool is_function(Token *tok);
 bool is_typename(Token *tok);

@@ -1,9 +1,9 @@
 #include "nerocc.h"
 
 // Input filename
-static char *current_filename;
+char *current_filename;
 
-static char *current_input;
+char *current_input;
 
 bool consume(Token **cur, Token *tok, char *str)
 {
@@ -177,6 +177,7 @@ Token *tokenize(char *filename, char *p)
     }
 
     cur->next = new_token(TK_EOF, p, p);
+    add_line_numbers(head.next);
     convert_keyword(head.next);
     return head.next;
 }
@@ -244,6 +245,25 @@ void convert_keyword(Token *tok)
             cur->kind = TK_KEYWORD;
         }
     }
+}
+
+void add_line_numbers(Token *tok)
+{
+    char *p = current_input;
+    int n = 1;
+
+    do
+    {
+        if (p == tok->loc)
+        {
+            tok->line_no = n;
+            tok = tok->next;
+        }
+        if (*p == '\n')
+        {
+            n++;
+        }
+    } while (*p++);
 }
 
 Token *read_string_literal(char *start)
