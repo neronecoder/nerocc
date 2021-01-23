@@ -216,6 +216,7 @@ void gen_expr(Node *node)
         println("    push $%d", node->val);
         return;
     case ND_VAR:
+    case ND_MEMBER:
         gen_addr(node);
         println("    pop %%rax");
         load(node->ty);
@@ -342,6 +343,12 @@ void gen_addr(Node *node)
         println("    push %%rax");
         return;
     }
+    case ND_MEMBER:
+        gen_addr(node->lhs);
+        println("   pop %%rax");
+        println("   add $%d, %%rax", node->member->offset);
+        println("   push %%rax");
+        return;
     case ND_DEREF:
         gen_expr(node->lhs);
         return;

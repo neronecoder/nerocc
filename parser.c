@@ -216,8 +216,18 @@ Type *declspec(Token **cur, Token *tok)
         return ty_char;
     }
 
-    *cur = skip(tok, "int");
-    return ty_int;
+    if (equal(tok, "int"))
+    {
+        *cur = tok->next;
+        return ty_int;
+    }
+
+    if (equal(tok, "struct"))
+    {
+        return struct_decl(cur, tok->next);
+    }
+
+    error("typename expected.");
 }
 
 Type *declarator(Token **cur, Token *tok, Type *ty)
@@ -272,6 +282,81 @@ Node *declaration(Token **cur, Token *tok)
     node->body = head.next;
     *cur = tok->next;
     return node;
+}
+
+Type *struct_decl(Token **cur, Token *tok)
+{
+    tok = skip(tok, "{");
+
+    // Construct a struct object
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = TY_STRUCT;
+    struct_members(cur, tok, ty);
+
+    // Assign offsets within the struct to members.
+    int offset = 0;
+    for (Member *mem = ty->members; mem; mem = mem->next)
+    {
+        mem->offset = offset;
+        offset += mem->ty->size;
+    }
+    ty->size = offset;
+
+    return ty;
+}
+
+void struct_members(Token **cur, Token *tok, Type *ty)
+{
+    Member head = {};
+    Member *cur_mem = &head;
+
+    while (!equal(tok, "}"))
+    {
+        Type *base_ty = declspec(&tok, tok);
+        int i = 0;
+
+        while (!consume(&tok, tok, ";"))
+        {
+            if (i++ > 0)
+            {
+                tok = skip(tok, ",");
+            }
+
+            Member *mem = calloc(1, sizeof(Member));
+            mem->ty = declarator(&tok, tok, base_ty);
+            mem->name = mem->ty->name;
+            cur_mem->next = mem;
+            cur_mem = cur_mem->next;
+        }
+    }
+
+    *cur = tok->next;
+    ty->members = head.next;
+}
+
+Node *struct_ref(Node *lhs, Token *tok)
+{
+    add_type(lhs);
+    if (lhs->ty->kind != TY_STRUCT)
+    {
+        error_tok(lhs->tok, "Not a struct.");
+    }
+
+    Node *node = new_unary(ND_MEMBER, lhs, tok);
+    node->member = get_struct_member(lhs->ty, tok);
+    return node;
+}
+
+Member *get_struct_member(Type *ty, Token *tok)
+{
+    for (Member *mem = ty->members; mem; mem = mem->next)
+    {
+        if (mem->name->len == tok->len && !strncmp(mem->name->loc, tok->loc, tok->len))
+        {
+            return mem;
+        }
+    }
+    error("No such member.");
 }
 
 Token *global_variable(Token *tok, Type *base_ty)
@@ -624,16 +709,28 @@ Node *postfix(Token **cur, Token *tok)
 {
     Node *node = primary(&tok, tok);
 
-    while (equal(tok, "["))
+    for (;;)
     {
-        // x[y] is short for *(x+y)
-        Token *start = tok;
-        Node *idx = expr(&tok, tok->next);
-        tok = skip(tok, "]");
-        node = new_unary(ND_DEREF, add_with_type(node, idx, tok), tok);
+        if (equal(tok, "["))
+        {
+            // x[y] is short for *(x+y)
+            Token *start = tok;
+            Node *idx = expr(&tok, tok->next);
+            tok = skip(tok, "]");
+            node = new_unary(ND_DEREF, add_with_type(node, idx, tok), tok);
+            continue;
+        }
+
+        if (equal(tok, "."))
+        {
+            node = struct_ref(node, tok->next);
+            tok = tok->next->next;
+            continue;
+        }
+
+        *cur = tok;
+        return node;
     }
-    *cur = tok;
-    return node;
 }
 
 Node *primary(Token **cur, Token *tok)
@@ -777,5 +874,5 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "char") || equal(tok, "int");
+    return equal(tok, "char") || equal(tok, "int") || equal(tok, "struct");
 }

@@ -13,14 +13,12 @@
 
 #define LOG 0
 
-// Common util methods
-void error(char *fmt, ...);
-
 // Common definitions
 typedef struct Type Type;
 typedef struct Token Token;
 typedef struct Node Node;
 typedef struct Obj Obj;
+typedef struct Member Member;
 typedef struct VarScope VarScope;
 typedef struct Scope Scope;
 
@@ -32,6 +30,7 @@ typedef enum
     TY_PTR,
     TY_FUNC,
     TY_ARRAY,
+    TY_STRUCT,
 } TypeKind;
 
 struct Type
@@ -47,6 +46,9 @@ struct Type
 
     // Array
     int array_len;
+
+    // Struct
+    Member *members;
 
     // Function type
     Type *return_ty;
@@ -144,6 +146,7 @@ typedef enum
     ND_LT,        // less than <
     ND_LE,        // less than or equal to <=
     ND_ASSIGN,    // =
+    ND_MEMBER,    // . (struct member access)
     ND_ADDR,      // unary &
     ND_DEREF,     // unary *
     ND_RETURN,    // return
@@ -179,6 +182,9 @@ struct Node
 
     // Block or statement expression
     Node *body;
+
+    // Struct member access
+    Member *member;
 
     // Function call
     char *funcname;
@@ -226,8 +232,18 @@ struct Scope
     VarScope *vars;
 };
 
+// Struct member
+struct Member
+{
+    Member *next;
+    Type *ty;
+    Token *name;
+    int offset;
+};
+
 // Functions for node creation
-Node *new_node(NodeKind kind, Token *tok);
+Node *
+new_node(NodeKind kind, Token *tok);
 
 // binary operator +, -, *, /
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
@@ -255,10 +271,12 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = "char" | "int"
+ * declspec             = "char" | "int" | struct-decl
  * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
+ * struct-decl          = "{" struct-members
+ * struct-members       = (declspec declarator ("," declarator)* ";")*
  * stmt                 = "return" expr ";" 
  *                      | "{" compound-stmt
  *                      | "if" "(" expr ")" stmt ("else" stmt)?
@@ -274,7 +292,7 @@ char *get_ident(Token *tok);
  * add                  = mul ("+" mul | "-" mul)*
  * mul                  = unary ("*" unary | "/" unary)*
  * unary                = ("+" | "-" | "*" | "&")? unary | postfix
- * postfix              = primary ("[" expr "]")*
+ * postfix              = primary ("[" expr "]" | "." ident)*
  * primary              = "(" "{" stmt+ "}" ")"
  *                      | "(" expr ")"
  *                      | "sizeof" unary
@@ -298,6 +316,10 @@ Token *function(Token *tok, Type *base_ty);
 Type *declspec(Token **cur, Token *tok);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok);
+Type *struct_decl(Token **cur, Token *tok);
+void struct_members(Token **cur, Token *tok, Type *ty);
+Node *struct_ref(Node *lhs, Token *tok);
+Member *get_struct_member(Type *ty, Token *tok);
 Token *global_variable(Token *tok, Type *base_ty);
 Node *stmt(Token **cur, Token *tok);
 Node *compound_stmt(Token **cur, Token *tok);
@@ -388,4 +410,9 @@ void gen_addr(Node *node);
 
 void assign_lvar_offsets(Obj *prog);
 int align_to(int offset, int align);
+
+// Common util methods
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+void error_tok(Token *tok, char *fmt, ...);
 #endif

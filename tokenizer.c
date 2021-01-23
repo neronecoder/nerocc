@@ -35,7 +35,7 @@ Token *skip(Token *tok, char *s)
 {
     if (!equal(tok, s))
     {
-        error("Expected '%s'", s);
+        error_tok(tok, "Expected '%s'", s);
     }
     return tok->next;
 }
@@ -233,7 +233,7 @@ char *read_file(char *filename)
 
 bool is_keyword(Token *tok)
 {
-    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "char") || equal(tok, "int") || equal(tok, "sizeof");
+    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "char") || equal(tok, "int") || equal(tok, "sizeof") || equal(tok, "struct");
 }
 
 void convert_keyword(Token *tok)
