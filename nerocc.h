@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #define LOG 0
@@ -27,7 +28,9 @@ typedef struct TagScope TagScope;
 typedef enum
 {
     TY_CHAR,
+    TY_SHORT,
     TY_INT,
+    TY_LONG,
     TY_PTR,
     TY_FUNC,
     TY_ARRAY,
@@ -61,6 +64,8 @@ struct Type
 
 extern Type *ty_char;
 extern Type *ty_int;
+extern Type *ty_short;
+extern Type *ty_long;
 
 Type *new_type(TypeKind kind, int size, int align);
 bool is_integer(Type *ty);
@@ -85,7 +90,7 @@ struct Token
 {
     TokenKind kind;
     Token *next;
-    int val;
+    int64_t val;
     char *loc;
     size_t len;
     Type *ty;  // Used if TK_STR
@@ -195,7 +200,7 @@ struct Node
     Node *args;
 
     Obj *var; // used if kind == ND_VAR
-    int val;
+    int64_t val;
 };
 
 // Variable or function
@@ -265,7 +270,7 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
 Node *new_unary(NodeKind kind, Node *expr, Token *tok);
 
 // integer
-Node *new_num(int val, Token *tok);
+Node *new_num(int64_t val, Token *tok);
 
 // identifier
 Node *new_var_node(Obj *var, Token *tok);
@@ -287,7 +292,7 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = "char" | "int" | struct-decl
+ * declspec             = "char" | "int" | "short" | "long" | struct-decl | union-decl
  * declarator           = "*"* ident type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt

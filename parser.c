@@ -29,7 +29,7 @@ Node *new_unary(NodeKind kind, Node *expr, Token *tok)
     return node;
 }
 
-Node *new_num(int val, Token *tok)
+Node *new_num(int64_t val, Token *tok)
 {
     Node *node = new_node(ND_NUM, tok);
     node->val = val;
@@ -244,6 +244,18 @@ Type *declspec(Token **cur, Token *tok)
     {
         *cur = tok->next;
         return ty_int;
+    }
+
+    if (equal(tok, "short"))
+    {
+        *cur = tok->next;
+        return ty_short;
+    }
+
+    if (equal(tok, "long"))
+    {
+        *cur = tok->next;
+        return ty_long;
     }
 
     if (equal(tok, "struct"))
@@ -969,5 +981,5 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "char") || equal(tok, "int") || equal(tok, "struct") || equal(tok, "union");
+    return equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union");
 }
