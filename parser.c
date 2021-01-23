@@ -781,6 +781,14 @@ Node *postfix(Token **cur, Token *tok)
             continue;
         }
 
+        if (equal(tok, "->")) {
+            // x->y is short for *(x).y
+            node = new_unary(ND_DEREF, node, tok);
+            node = struct_ref(node, tok->next);
+            tok = tok->next->next;
+            continue;
+        }
+
         *cur = tok;
         return node;
     }

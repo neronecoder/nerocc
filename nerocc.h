@@ -307,7 +307,7 @@ char *get_ident(Token *tok);
  * add                  = mul ("+" mul | "-" mul)*
  * mul                  = unary ("*" unary | "/" unary)*
  * unary                = ("+" | "-" | "*" | "&")? unary | postfix
- * postfix              = primary ("[" expr "]" | "." ident)*
+ * postfix              = primary ("[" expr "]" | "." ident | "->" ident)*
  * primary              = "(" "{" stmt+ "}" ")"
  *                      | "(" expr ")"
  *                      | "sizeof" unary
