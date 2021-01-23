@@ -293,7 +293,7 @@ char *get_ident(Token *tok);
 /* Grammar
  * program              = (function-definition | global-variable)*
  * declspec             = "char" | "int" | "short" | "long" | struct-decl | union-decl
- * declarator           = "*"* ident type-suffix
+ * declarator           = "*"* ("(" ident ")" | "(" declarator ")" | ident) type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
  * struct-decl          = "struct" struct-or-union-decl
