@@ -221,6 +221,7 @@ void gen_expr(Node *node)
         return;
     case ND_DEREF:
         gen_expr(node->lhs);
+        println("    pop %%rax");
         load(node->ty);
         println("    push %%rax");
         return;

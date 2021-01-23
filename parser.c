@@ -119,7 +119,7 @@ static char *new_unique_name()
 {
     static int id = 0;
     char *buf = calloc(1, 20);
-    sprintf(buf, ".L.%d", id++);
+    sprintf(buf, ".L..%d", id++);
     return buf;
 }
 
