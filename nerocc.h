@@ -434,6 +434,10 @@ void gen_addr(Node *node);
 void assign_lvar_offsets(Obj *prog);
 int align_to(int offset, int align);
 
+void load(Type *ty);
+void store(Type *ty);
+void store_gp(int r, int offset, int sz);
+
 // Common util methods
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);

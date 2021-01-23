@@ -7,6 +7,7 @@ static int count()
 }
 
 static char *argreg8[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
+static char *argreg32[] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
 static char *argreg64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
 static Obj *current_func;
 
@@ -31,6 +32,10 @@ void load(Type *ty)
     {
         println("    movsbq (%%rax), %%rax");
     }
+    else if (ty->size == 4)
+    {
+        println("    movsxd (%%rax), %%rax");
+    }
     else
     {
         println("    mov (%%rax), %%rax");
@@ -43,8 +48,8 @@ void store(Type *ty)
     {
         for (int i = 0; i < ty->size; i++)
         {
-            println("   mov %d(%%rdi), %%r8b", i);
-            println("   mov %%r8b, %d(%%rax)", i);
+            println("    mov %d(%%rdi), %%r8b", i);
+            println("    mov %%r8b, %d(%%rax)", i);
         }
         return;
     }
@@ -52,10 +57,31 @@ void store(Type *ty)
     {
         println("    mov %%dil, (%%rax)");
     }
+    else if (ty->size == 4)
+    {
+        println("    mov %%edi, (%%rax)");
+    }
     else
     {
         println("    mov %%rdi, (%%rax)");
     }
+}
+
+void store_gp(int r, int offset, int sz)
+{
+    switch (sz)
+    {
+    case 1:
+        println("   mov %s, -%d(%%rbp)", argreg8[r], offset);
+        return;
+    case 4:
+        println("   mov %s, -%d(%%rbp)", argreg32[r], offset);
+        return;
+    case 8:
+        println("   mov %s, -%d(%%rbp)", argreg64[r], offset);
+        return;
+    }
+    error("Size should be one of (1, 4, 8), %d given.", sz);
 }
 
 void gen_code(Obj *prog, FILE *out)
@@ -115,14 +141,7 @@ void emit_text(Obj *prog)
         int i = 0;
         for (Obj *var = func->params; var; var = var->next)
         {
-            if (var->ty->size == 1)
-            {
-                println("    mov %s, -%d(%%rbp)", argreg8[i++], var->offset);
-            }
-            else
-            {
-                println("    mov %s, -%d(%%rbp)", argreg64[i++], var->offset);
-            }
+            store_gp(i++, var->offset, var->ty->size);
         }
         // Emit code
         gen_stmt(func->body);
@@ -137,7 +156,7 @@ void emit_text(Obj *prog)
 
 void gen_stmt(Node *node)
 {
-    println("   .loc 1 %d", node->tok->line_no);
+    println("    .loc 1 %d", node->tok->line_no);
     switch (node->kind)
     {
     case ND_RETURN:
@@ -159,14 +178,12 @@ void gen_stmt(Node *node)
         println("    cmp $0, %%rax");
         println("    je  .L.else.%d", c);
         gen_stmt(node->then);
-        println("    pop %%rax");
         println("    jmp .L.end.%d", c);
         println(".L.else.%d:", c);
 
         if (node->els)
         {
             gen_stmt(node->els);
-            println("pop %%rax");
         }
         println(".L.end.%d:", c);
         return;
@@ -218,7 +235,7 @@ void gen_stmt(Node *node)
 
 void gen_expr(Node *node)
 {
-    println("   .loc 1 %d", node->tok->line_no);
+    println("    .loc 1 %d", node->tok->line_no);
     switch (node->kind)
     {
     case ND_NUM:
@@ -354,9 +371,9 @@ void gen_addr(Node *node)
     }
     case ND_MEMBER:
         gen_addr(node->lhs);
-        println("   pop %%rax");
-        println("   add $%d, %%rax", node->member->offset);
-        println("   push %%rax");
+        println("    pop %%rax");
+        println("    add $%d, %%rax", node->member->offset);
+        println("    push %%rax");
         return;
     case ND_DEREF:
         gen_expr(node->lhs);
