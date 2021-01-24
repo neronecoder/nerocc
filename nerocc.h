@@ -172,6 +172,7 @@ typedef enum
     ND_MEMBER,    // . (struct member access)
     ND_ADDR,      // unary &
     ND_DEREF,     // unary *
+    ND_NOT,       // !
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement # follow not sure what this is for
     ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for

@@ -1084,6 +1084,11 @@ Node *unary(Token **cur, Token *tok)
         return new_unary(ND_DEREF, node, tok);
     }
 
+    if (equal(tok, "!"))
+    {
+        return new_unary(ND_NOT, cast(cur, tok->next), tok);
+    }
+
     // Read ++i as i+=1
     if (equal(tok, "++"))
     {

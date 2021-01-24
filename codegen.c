@@ -380,6 +380,14 @@ void gen_expr(Node *node)
         println("   pop %%rax");
         gen_expr(node->rhs);
         return;
+    case ND_NOT:
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        println("   cmp $0, %%rax");
+        println("   sete %%al");
+        println("   movzx %%al, %%rax");
+        println("   push %%rax");
+        return;
     case ND_FUNCALL:
     {
         int nargs = 0;
