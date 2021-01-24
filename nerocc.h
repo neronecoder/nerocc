@@ -190,6 +190,8 @@ typedef enum
     ND_FUNCALL,   // Function call
     ND_IF,        // if
     ND_FOR,       // used for "for" and "while"
+    ND_SWITCH,    // "switch"
+    ND_CASE,      // "case"
     ND_VAR,       // Objiable
     ND_NUM,       // integer
     ND_CAST,      // Type case
@@ -234,7 +236,14 @@ struct Node
     char *break_label;
     char *cont_label;
 
-    Obj *var; // used if kind == ND_VAR
+    // Switch-cases
+    Node *case_next;
+    Node *default_case;
+
+    // Variable
+    Obj *var;
+
+    // Numeric literal
     int64_t val;
 };
 
@@ -363,6 +372,9 @@ char *get_ident(Token *tok);
  * stmt                 = "return" expr ";" 
  *                      | "{" compound-stmt
  *                      | "if" "(" expr ")" stmt ("else" stmt)?
+ *                      | "switch" "(" expr ")" stmt
+ *                      | "case" num ":" stmt
+ *                      | "default" ":" stmt
  *                      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
  *                      | "while" "(" expr ")" stmt
  *                      | "goto" ident ";"

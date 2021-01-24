@@ -16,6 +16,10 @@ Node *labels;
 static char *break_label;
 static char *cont_label;
 
+// Points to a node representing a switch if we are parsing
+// a switch statement. O/W, NULL.
+Node *current_switch;
+
 Node *new_node(NodeKind kind, Token *tok)
 {
     Node *node = calloc(1, sizeof(Node));
@@ -771,6 +775,60 @@ Node *stmt(Token **cur, Token *tok)
         }
 
         *cur = tok;
+        return node;
+    }
+
+    if (equal(tok, "switch"))
+    {
+        Node *node = new_node(ND_SWITCH, tok);
+        tok = skip(tok->next, "(");
+        node->cond = expr(&tok, tok);
+        tok = skip(tok, ")");
+
+        Node *sw = current_switch;
+        current_switch = node;
+
+        char *brk = break_label;
+        break_label = node->break_label = new_unique_name();
+
+        node->then = stmt(cur, tok);
+
+        current_switch = sw;
+        break_label = brk;
+        return node;
+    }
+
+    if (equal(tok, "case"))
+    {
+        if (!current_switch)
+        {
+            error_tok(tok, "stray case");
+        }
+
+        int val = get_number(tok->next);
+
+        Node *node = new_node(ND_CASE, tok);
+        tok = skip(tok->next->next, ":");
+        node->label = new_unique_name();
+        node->lhs = stmt(cur, tok);
+        node->val = val;
+        node->case_next = current_switch->case_next;
+        current_switch->case_next = node;
+        return node;
+    }
+
+    if (equal(tok, "default"))
+    {
+        if (!current_switch)
+        {
+            error_tok(tok, "stray default");
+        }
+
+        Node *node = new_node(ND_CASE, tok);
+        tok = skip(tok->next, ":");
+        node->label = new_unique_name();
+        node->lhs = stmt(cur, tok);
+        current_switch->default_case = node;
         return node;
     }
 
