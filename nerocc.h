@@ -204,6 +204,7 @@ struct Node
 
     // Function call
     char *funcname;
+    Type *func_ty;
     Node *args;
 
     Obj *var; // used if kind == ND_VAR
@@ -389,7 +390,8 @@ Type *abstract_declarator(Token **cur, Token *tok, Type *ty);
 Type *typename(Token **cur, Token *tok);
 Type *type_suffix(Token **cur, Token *tok, Type *ty);
 Type *func_params(Token **cur, Token *tok, Type *ty);
-Node *func_args(Token **cur, Token *tok);
+
+Node *funcall(Token **cur, Token *tok);
 
 Node *add_with_type(Node *lhs, Node *rhs, Token *tok);
 Node *sub_with_type(Node *lhs, Node *rhs, Token *tok);

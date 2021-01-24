@@ -1039,23 +1039,7 @@ Node *primary(Token **cur, Token *tok)
         // Check func call
         if (equal(tok->next, "("))
         {
-            VarScope *sc = find_var(tok);
-            if (!sc)
-            {
-                error_tok(tok, "implicit declaration of a function.");
-            }
-            if (!sc->var || sc->var->ty->kind != TY_FUNC)
-            {
-                error_tok(tok, "not a function.");
-            }
-            Type *ty = sc->var->ty->return_ty;
-
-            Node *node = new_node(ND_FUNCALL, tok);
-            node->funcname = strndup(tok->loc, tok->len);
-            node->ty = ty;
-            node->args = func_args(&tok, tok->next);
-            *cur = tok;
-            return node;
+            return funcall(cur, tok);
         }
 
         // Variable
@@ -1084,6 +1068,61 @@ Node *primary(Token **cur, Token *tok)
     }
 
     error("Expected an expression");
+}
+
+Node *funcall(Token **cur, Token *tok)
+{
+    Token *start = tok;
+    tok = tok->next->next;
+    VarScope *sc = find_var(start);
+    if (!sc)
+    {
+        error_tok(start, "implicit declaration of a function.");
+    }
+
+    if (!sc->var || sc->var->ty->kind != TY_FUNC)
+    {
+        error_tok(start, "Not a function.");
+    }
+
+    Type *ty = sc->var->ty;
+    Type *param_ty = ty->params;
+
+    Node head = {};
+    Node *cur_node = &head;
+
+    while (!equal(tok, ")"))
+    {
+        if (cur_node != &head)
+        {
+            tok = skip(tok, ",");
+        }
+
+        Node *arg = assign(&tok, tok);
+        add_type(arg);
+
+        if (param_ty)
+        {
+            if (param_ty->kind == TY_STRUCT || param_ty->kind == TY_UNION)
+            {
+                error_tok(arg->tok, "passing struct or union is not supported yet.");
+            }
+            arg = new_cast(arg, param_ty);
+            param_ty = param_ty->next;
+        }
+
+        cur_node->next = arg;
+        cur_node = cur_node->next;
+    }
+
+    *cur = skip(tok, ")");
+
+    Node *node = new_node(ND_FUNCALL, start);
+    node->funcname = strndup(start->loc, start->len);
+    node->func_ty = ty;
+    node->ty = ty->return_ty;
+    node->args = head.next;
+    return node;
 }
 
 Type *abstract_declarator(Token **cur, Token *tok, Type *ty)
@@ -1152,29 +1191,6 @@ Type *func_params(Token **cur, Token *tok, Type *ty)
     ty->params = head.next;
     *cur = skip(tok, ")");
     return ty;
-}
-
-Node *func_args(Token **cur, Token *tok)
-{
-    Node head = {};
-    Node *cur_node = &head;
-
-    tok = skip(tok, "(");
-    int cnt = 0;
-    while (!equal(tok, ")"))
-    {
-        if (cnt++ > 0)
-        {
-            tok = skip(tok, ",");
-        }
-        cur_node->next = assign(&tok, tok);
-        cur_node = cur_node->next;
-        add_type(cur_node);
-    }
-
-    tok = skip(tok, ")");
-    *cur = tok;
-    return head.next;
 }
 
 bool is_function(Token *tok)
