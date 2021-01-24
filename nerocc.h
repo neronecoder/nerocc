@@ -80,6 +80,7 @@ Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
 Type *array_of(Type *base, int len);
 Type *enum_type();
+Type *struct_type();
 void add_type(Node *node);
 Type *copy_type(Type *ty);
 
