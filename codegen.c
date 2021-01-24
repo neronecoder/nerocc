@@ -394,6 +394,45 @@ void gen_expr(Node *node)
         println("   not %%rax");
         println("   push %%rax");
         return;
+
+    case ND_LOGAND:
+    {
+        int c = count();
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        println("   cmp $0, %%rax");
+        println("   je .L.false.%d", c);
+        gen_expr(node->rhs);
+        println("   pop %%rax");
+        println("   cmp $0, %%rax");
+        println("   je .L.false.%d", c);
+        println("   mov $1, %%rax");
+        println("   jmp .L.end.%d", c);
+        println(".L.false.%d:", c);
+        println("   mov $0, %%rax");
+        println(".L.end.%d:", c);
+        println("   push %%rax");
+        return;
+    }
+    case ND_LOGOR:
+    {
+        int c = count();
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        println("   cmp $0, %%rax");
+        println("   jne .L.true.%d", c);
+        gen_expr(node->rhs);
+        println("   pop %%rax");
+        println("   cmp $0, %%rax");
+        println("   jne .L.true.%d", c);
+        println("   mov $0, %%rax");
+        println("   jmp .L.end.%d", c);
+        println(".L.true.%d:", c);
+        println("   mov $1, %%rax");
+        println(".L.end.%d:", c);
+        println("   push %%rax");
+        return;
+    }
     case ND_FUNCALL:
     {
         int nargs = 0;

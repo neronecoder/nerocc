@@ -174,6 +174,8 @@ typedef enum
     ND_DEREF,     // unary *
     ND_NOT,       // !
     ND_BITNOT,    // ~
+    ND_LOGAND,    // &&
+    ND_LOGOR,     // ||
     ND_MOD,       // %
     ND_BITAND,    // &
     ND_BITOR,     // |
@@ -355,8 +357,10 @@ char *get_ident(Token *tok);
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"
  * expr-stmt            = expr? ";"
  * expr                 = assign ("," expr)?
- * assign               = bitor (assign-op assign)?
+ * assign               = logor (assign-op assign)?
  * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^="
+ * logor                = logand ("||" logand)*
+ * logand               = bitor ("&&" bitor)*
  * bitor                = bitxor ("|" bitxor)*
  * bitxor               = bitand ("^" bitand)*
  * bitand               = equality ("&" equality)*
@@ -407,6 +411,8 @@ Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
 Node *assign(Token **cur, Token *tok);
+Node *logor(Token **cur, Token *tok);
+Node *logand(Token **cur, Token *tok);
 Node *bitor(Token **cur, Token *tok);
 Node *bitxor(Token **cur, Token *tok);
 Node *bitand(Token **cur, Token *tok);
