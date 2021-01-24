@@ -5,6 +5,9 @@ Obj *globals;
 
 static Scope *scope = &(Scope){};
 
+// Points to the function object the parser is currently parsing.
+static Obj *current_func;
+
 Node *new_node(NodeKind kind, Token *tok)
 {
     Node *node = calloc(1, sizeof(Node));
@@ -245,6 +248,8 @@ Token *function(Token *tok, Type *base_ty)
     {
         return tok;
     }
+
+    current_func = func;
     locals = NULL;
 
     enter_scope();
@@ -608,8 +613,13 @@ Node *stmt(Token **cur, Token *tok)
     print_node(tok, __FUNCTION__);
     if (equal(tok, "return"))
     {
-        Node *node = new_unary(ND_RETURN, expr(&tok, tok->next), tok);
+        Node *node = new_node(ND_RETURN, tok);
+        Node *exp = expr(&tok, tok->next);
+
         *cur = skip(tok, ";");
+
+        add_type(exp);
+        node->lhs = new_cast(exp, current_func->ty->return_ty);
         return node;
     }
 
