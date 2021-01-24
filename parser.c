@@ -313,6 +313,7 @@ Type *declspec(Token **cur, Token *tok)
             ty = ty_int;
             break;
         case LONG:
+        case LONG + LONG:
         case LONG + INT:
             ty = ty_long;
             break;
