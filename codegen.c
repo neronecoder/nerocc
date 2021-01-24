@@ -464,6 +464,15 @@ void gen_expr(Node *node)
             println("   mov %%rdx, %%rax");
         }
         break;
+    case ND_BITAND:
+        println("   and %%rdi, %%rax");
+        break;
+    case ND_BITOR:
+        println("   or %%rdi, %%rax");
+        break;
+    case ND_BITXOR:
+        println("   xor %%rdi, %%rax");
+        break;
     case ND_EQ:
     case ND_NE:
     case ND_LT:

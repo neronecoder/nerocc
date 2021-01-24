@@ -175,6 +175,9 @@ typedef enum
     ND_NOT,       // !
     ND_BITNOT,    // ~
     ND_MOD,       // %
+    ND_BITAND,    // &
+    ND_BITOR,     // |
+    ND_BITXOR,    // ^
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement # follow not sure what this is for
     ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for
@@ -352,8 +355,11 @@ char *get_ident(Token *tok);
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"
  * expr-stmt            = expr? ";"
  * expr                 = assign ("," expr)?
- * assign               = equality (assign-op assign)?
- * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%="
+ * assign               = bitor (assign-op assign)?
+ * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^="
+ * bitor                = bitxor ("|" bitxor)*
+ * bitxor               = bitand ("^" bitand)*
+ * bitand               = equality ("&" equality)*
  * equality             = relational ("==" relational | "!=" relational)*
  * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add                  = mul ("+" mul | "-" mul)*
@@ -401,6 +407,9 @@ Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
 Node *assign(Token **cur, Token *tok);
+Node *bitor(Token **cur, Token *tok);
+Node *bitxor(Token **cur, Token *tok);
+Node *bitand(Token **cur, Token *tok);
 Node *equality(Token **cur, Token *tok);
 Node *relational(Token **cur, Token *tok);
 Node *add(Token **cur, Token *tok);

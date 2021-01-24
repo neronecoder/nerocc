@@ -848,7 +848,7 @@ Node *expr(Token **cur, Token *tok)
 Node *assign(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    Node *node = equality(&tok, tok);
+    Node *node = bitor (&tok, tok);
     if (equal(tok, "="))
     {
         return new_binary(ND_ASSIGN, node, assign(cur, tok->next), tok);
@@ -878,6 +878,60 @@ Node *assign(Token **cur, Token *tok)
     {
         return to_assign(new_binary(ND_MOD, node, assign(cur, tok->next), tok));
     }
+
+    if (equal(tok, "&="))
+    {
+        return to_assign(new_binary(ND_BITAND, node, assign(cur, tok->next), tok));
+    }
+
+    if (equal(tok, "|="))
+    {
+        return to_assign(new_binary(ND_BITOR, node, assign(cur, tok->next), tok));
+    }
+
+    if (equal(tok, "^="))
+    {
+        return to_assign(new_binary(ND_BITXOR, node, assign(cur, tok->next), tok));
+    }
+    *cur = tok;
+    return node;
+}
+
+Node * bitor (Token * *cur, Token *tok)
+{
+    Node *node = bitxor(&tok, tok);
+    while (equal(tok, "|"))
+    {
+        Token *start = tok;
+        node = new_binary(ND_BITOR, node, bitxor(&tok, tok->next), start);
+    }
+
+    *cur = tok;
+    return node;
+}
+
+Node *bitxor(Token **cur, Token *tok)
+{
+    Node *node = bitand(&tok, tok);
+    while (equal(tok, "^"))
+    {
+        Token *start = tok;
+        node = new_binary(ND_BITXOR, node, bitand(&tok, tok->next), start);
+    }
+
+    *cur = tok;
+    return node;
+}
+
+Node *bitand(Token **cur, Token *tok)
+{
+    Node *node = equality(&tok, tok);
+    while (equal(tok, "&"))
+    {
+        Token *start = tok;
+        node = new_binary(ND_BITAND, node, equality(&tok, tok->next), start);
+    }
+
     *cur = tok;
     return node;
 }
