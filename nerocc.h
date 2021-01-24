@@ -230,8 +230,9 @@ struct Node
     char *unique_label;
     Node *goto_next;
 
-    // "break" label
+    // "break" and "continue" label
     char *break_label;
+    char *cont_label;
 
     Obj *var; // used if kind == ND_VAR
     int64_t val;
@@ -366,6 +367,7 @@ char *get_ident(Token *tok);
  *                      | "while" "(" expr ")" stmt
  *                      | "goto" ident ";"
  *                      | "break" ";"
+ *                      | "continue" ";"
  *                      | ident ":" stmt
  *                      | exprexpr-stmt
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"

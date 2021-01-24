@@ -12,8 +12,9 @@ static Obj *current_func;
 Node *gotos;
 Node *labels;
 
-// Current "goto" jump taget.
+// Current "goto" and "continue" jump tagets.
 static char *break_label;
+static char *cont_label;
 
 Node *new_node(NodeKind kind, Token *tok)
 {
@@ -781,7 +782,9 @@ Node *stmt(Token **cur, Token *tok)
         enter_scope();
 
         char *brk = break_label;
+        char *cont = cont_label;
         break_label = node->break_label = new_unique_name();
+        cont_label = node->cont_label = new_unique_name();
 
         if (is_typename(tok))
         {
@@ -806,6 +809,7 @@ Node *stmt(Token **cur, Token *tok)
         node->then = stmt(cur, tok);
         leave_scope();
         break_label = brk;
+        cont_label = cont;
         return node;
     }
 
@@ -817,10 +821,13 @@ Node *stmt(Token **cur, Token *tok)
         tok = skip(tok, ")");
 
         char *brk = break_label;
+        char *cont = cont_label;
         break_label = node->break_label = new_unique_name();
+        cont_label = node->cont_label = new_unique_name();
 
         node->then = stmt(cur, tok);
         break_label = brk;
+        cont_label = cont;
         return node;
     }
 
@@ -842,6 +849,19 @@ Node *stmt(Token **cur, Token *tok)
         }
         Node *node = new_node(ND_GOTO, tok);
         node->unique_label = break_label;
+        *cur = skip(tok->next, ";");
+        return node;
+    }
+
+    if (equal(tok, "continue"))
+    {
+        if (!cont_label)
+        {
+            error_tok(tok, "stray continue");
+        }
+
+        Node *node = new_node(ND_GOTO, tok);
+        node->unique_label = cont_label;
         *cur = skip(tok->next, ";");
         return node;
     }
