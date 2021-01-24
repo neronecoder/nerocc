@@ -210,7 +210,14 @@ void emit_text(Obj *prog)
         {
             continue;
         }
-        println("    .globl %s", func->name);
+        if (func->is_static)
+        {
+            println("   .local %s", func->name);
+        }
+        else
+        {
+            println("    .globl %s", func->name);
+        }
         println("    .text");
         println("%s:", func->name);
         current_func = func;

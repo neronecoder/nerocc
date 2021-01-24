@@ -232,6 +232,7 @@ struct Obj
     // True if it is function with body.
     bool is_definition;
 
+    bool is_static;
     // Global variable
     char *init_data;
 
@@ -285,6 +286,7 @@ struct TagScope
 struct VarAttr
 {
     bool is_typedef;
+    bool is_static;
 };
 
 // Functions for node creation
@@ -322,7 +324,7 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = ("void" | "_Bool" | "char" | "int" | "short" | "long" | "typedef" | struct-decl | union-decl)+
+ * declspec             = ("void" | "_Bool" | "char" | "int" | "short" | "long" | "typedef" | "static" | struct-decl | union-decl)+
  * declarator           = "*"* ("(" ident ")" | "(" declarator ")" | ident) type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
@@ -371,7 +373,7 @@ void print_node(Token *cur, const char *func);
 // Entry point for parsing
 Obj *parse(Token *tok);
 
-Token *function(Token *tok, Type *base_ty);
+Token *function(Token *tok, Type *base_ty, VarAttr *attr);
 Type *declspec(Token **cur, Token *tok, VarAttr *attr);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok, Type *base_ty);

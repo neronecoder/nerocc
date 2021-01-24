@@ -226,7 +226,7 @@ Obj *parse(Token *tok)
         // Function
         if (is_function(tok))
         {
-            tok = function(tok, base_ty);
+            tok = function(tok, base_ty, &attr);
             continue;
         }
 
@@ -236,14 +236,14 @@ Obj *parse(Token *tok)
     return globals;
 }
 
-Token *function(Token *tok, Type *base_ty)
+Token *function(Token *tok, Type *base_ty, VarAttr *attr)
 {
     Type *ty = declarator(&tok, tok, base_ty);
 
     Obj *func = new_gvar(get_ident(ty->name), ty);
     func->is_function = true;
     func->is_definition = !consume(&tok, tok, ";");
-
+    func->is_static = attr->is_static;
     if (!func->is_definition)
     {
         return tok;
@@ -298,14 +298,25 @@ Type *declspec(Token **cur, Token *tok, VarAttr *attr)
     int counter = 0;
     while (is_typename(tok))
     {
-        // Handle "typedef" keyword
-        if (equal(tok, "typedef"))
+        // Handle storage class specifiers.
+        if (equal(tok, "typedef") || equal(tok, "static"))
         {
             if (!attr)
             {
                 error_tok(tok, "Storage class specifier is not allowed in this context.");
             }
-            attr->is_typedef = true;
+            if (equal(tok, "typedef"))
+            {
+                attr->is_typedef = true;
+            }
+            else
+            {
+                attr->is_static = true;
+            }
+            if (!attr->is_typedef && !attr->is_static)
+            {
+                error_tok(tok, "typedef and static may not be used together.");
+            }
             tok = tok->next;
             continue;
         }
@@ -1289,7 +1300,7 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "void") || equal(tok, "_Bool") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "typedef") || equal(tok, "enum") || find_typedef(tok);
+    return equal(tok, "void") || equal(tok, "_Bool") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "typedef") || equal(tok, "enum") || equal(tok, "static") || find_typedef(tok);
 }
 
 Token *parse_typedef(Token *tok, Type *base_ty)
