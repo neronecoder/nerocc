@@ -29,6 +29,7 @@ typedef struct VarAttr VarAttr;
 typedef enum
 {
     TY_VOID,
+    TY_BOOL,
     TY_CHAR,
     TY_SHORT,
     TY_INT,
@@ -65,6 +66,7 @@ struct Type
 };
 
 extern Type *ty_void;
+extern Type *ty_bool;
 extern Type *ty_char;
 extern Type *ty_int;
 extern Type *ty_short;
@@ -315,7 +317,7 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = ("void" | "char" | "int" | "short" | "long" | "typedef" | struct-decl | union-decl)+
+ * declspec             = ("void" | "_Bool" | "char" | "int" | "short" | "long" | "typedef" | struct-decl | union-decl)+
  * declarator           = "*"* ("(" ident ")" | "(" declarator ")" | ident) type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
@@ -476,6 +478,8 @@ void store(Type *ty);
 void store_gp(int r, int offset, int sz);
 void cast_type(Type *from, Type *to);
 int getTypeId(Type *ty);
+
+void cmp_zero(Type *ty);
 
 // Common util methods
 void error(char *fmt, ...);

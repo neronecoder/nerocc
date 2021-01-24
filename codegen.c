@@ -124,6 +124,14 @@ void cast_type(Type *from, Type *to)
         return;
     }
 
+    if (to->kind == TY_BOOL)
+    {
+        cmp_zero(from);
+        println("   setne %%al");
+        println("   movzx %%al, %%eax");
+        return;
+    }
+
     int t1 = getTypeId(from);
     int t2 = getTypeId(to);
 
@@ -145,6 +153,18 @@ int getTypeId(Type *ty)
         return I32;
     }
     return I64;
+}
+
+void cmp_zero(Type *ty)
+{
+    if (is_integer(ty) && ty->size <= 4)
+    {
+        println("   cmp $0, %%eax");
+    }
+    else
+    {
+        println("   cmp $0, %%rax");
+    }
 }
 
 void gen_code(Obj *prog, FILE *out)

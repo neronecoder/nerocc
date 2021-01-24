@@ -1,6 +1,7 @@
 #include "nerocc.h"
 
 Type *ty_void = &(Type){TY_VOID, 1, 1};
+Type *ty_bool = &(Type){TY_BOOL, 1, 1};
 Type *ty_char = &(Type){TY_CHAR, 1, 1};
 Type *ty_short = &(Type){TY_SHORT, 2, 2};
 Type *ty_int = &(Type){TY_INT, 4, 4};
@@ -18,7 +19,7 @@ Type *new_type(TypeKind kind, int size, int align)
 bool is_integer(Type *ty)
 {
     TypeKind kind = ty->kind;
-    return kind == TY_CHAR || kind == TY_INT || kind == TY_SHORT || kind == TY_LONG;
+    return kind == TY_BOOL || kind == TY_CHAR || kind == TY_INT || kind == TY_SHORT || kind == TY_LONG;
 }
 
 Type *pointer_to(Type *base)

@@ -285,11 +285,12 @@ Type *declspec(Token **cur, Token *tok, VarAttr *attr)
     enum
     {
         VOID = 1 << 0,
-        CHAR = 1 << 2,
-        SHORT = 1 << 4,
-        INT = 1 << 6,
-        LONG = 1 << 8,
-        OTHER = 1 << 10,
+        BOOL = 1 << 2,
+        CHAR = 1 << 4,
+        SHORT = 1 << 6,
+        INT = 1 << 8,
+        LONG = 1 << 10,
+        OTHER = 1 << 12,
     };
 
     Type *ty = ty_int;
@@ -341,6 +342,10 @@ Type *declspec(Token **cur, Token *tok, VarAttr *attr)
         {
             counter += VOID;
         }
+        else if (equal(tok, "_Bool"))
+        {
+            counter += BOOL;
+        }
         else if (equal(tok, "char"))
         {
             counter += CHAR;
@@ -366,6 +371,9 @@ Type *declspec(Token **cur, Token *tok, VarAttr *attr)
         {
         case VOID:
             ty = ty_void;
+            break;
+        case BOOL:
+            ty = ty_bool;
             break;
         case CHAR:
             ty = ty_char;
@@ -1207,7 +1215,7 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "void") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "typedef") || find_typedef(tok);
+    return equal(tok, "void") || equal(tok, "_Bool") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "typedef") || find_typedef(tok);
 }
 
 Token *parse_typedef(Token *tok, Type *base_ty)
