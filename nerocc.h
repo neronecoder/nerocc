@@ -139,6 +139,7 @@ char *read_file(char *filename);
 void convert_keyword(Token *tok);
 void add_line_numbers(Token *tok);
 
+Token *read_char_literal(char *p);
 Token *read_string_literal(char *p);
 char *string_literal_end(char *p);
 int read_escaped_char(char **new_pos, char *p);

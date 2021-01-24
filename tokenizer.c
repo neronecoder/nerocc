@@ -145,9 +145,19 @@ Token *tokenize(char *filename, char *p)
             continue;
         }
 
+        // String literal
         if (*p == '"')
         {
             cur->next = read_string_literal(p);
+            cur = cur->next;
+            p += cur->len;
+            continue;
+        }
+
+        // Character literal
+        if (*p == '\'')
+        {
+            cur->next = read_char_literal(p);
             cur = cur->next;
             p += cur->len;
             continue;
@@ -264,6 +274,35 @@ void add_line_numbers(Token *tok)
             n++;
         }
     } while (*p++);
+}
+
+Token *read_char_literal(char *start)
+{
+    char *p = start + 1;
+    if (*p == '\0')
+    {
+        error_at(start, "unclosed char literal");
+    }
+
+    char c;
+    if (*p == '\\')
+    {
+        c = read_escaped_char(&p, p + 1);
+    }
+    else
+    {
+        c = *p++;
+    }
+
+    char *end = strchr(p, '\'');
+    if (!end)
+    {
+        error_at(p, "unclosed char literal");
+    }
+
+    Token *tok = new_token(TK_NUM, start, end + 1);
+    tok->val = c;
+    return tok;
 }
 
 Token *read_string_literal(char *start)
