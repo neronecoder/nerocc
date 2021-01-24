@@ -464,6 +464,10 @@ Node *declaration(Token **cur, Token *tok, Type *base_ty)
         }
 
         Type *ty = declarator(&tok, tok, base_ty);
+        if (ty->size < 0)
+        {
+            error_tok(tok, "variable has incomplete type");
+        }
         if (ty->kind == TY_VOID)
         {
             error_tok(tok, "variable declared void.");
@@ -1427,13 +1431,24 @@ Type *type_suffix(Token **cur, Token *tok, Type *ty)
     }
     if (equal(tok, "["))
     {
-        int sz = get_number(tok->next);
-        tok = skip(tok->next->next, "]");
-        ty = type_suffix(cur, tok, ty);
-        return array_of(ty, sz);
+        return array_dimensions(cur, tok->next, ty);
     }
     *cur = tok;
     return ty;
+}
+
+Type *array_dimensions(Token **cur, Token *tok, Type *ty)
+{
+    if (equal(tok, "]"))
+    {
+        ty = type_suffix(cur, tok->next, ty);
+        return array_of(ty, -1);
+    }
+
+    int sz = get_number(tok);
+    tok = skip(tok->next, "]");
+    ty = type_suffix(cur, tok, ty);
+    return array_of(ty, sz);
 }
 
 Type *func_params(Token **cur, Token *tok, Type *ty)

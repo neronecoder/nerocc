@@ -281,6 +281,7 @@ struct Member
 {
     Member *next;
     Type *ty;
+    Token *tok; // for error message
     Token *name;
     int offset;
 };
@@ -379,8 +380,9 @@ char *get_ident(Token *tok);
  *                      | str
  *                      | num 
  * type-suffix          = "(" func-params
- *                      | "[" num "]" type-suffix
+ *                      | "[" array-dimensions
  *                      | ɛ
+ * array-dimensions     = num? "]" type-suffix
  * type-name            = declspec abstract-declarator
  * abstract-declarator  = "*"* ("(" abstract-declarator ")")? type-suffix
  * func-args            = "(" (assign ("," assign)*)? ")"
@@ -413,7 +415,7 @@ Node *expr(Token **cur, Token *tok);
 Node *assign(Token **cur, Token *tok);
 Node *logor(Token **cur, Token *tok);
 Node *logand(Token **cur, Token *tok);
-Node *bitor(Token **cur, Token *tok);
+Node * bitor (Token * *cur, Token *tok);
 Node *bitxor(Token **cur, Token *tok);
 Node *bitand(Token **cur, Token *tok);
 Node *equality(Token **cur, Token *tok);
@@ -427,6 +429,7 @@ Node *primary(Token **cur, Token *tok);
 Type *abstract_declarator(Token **cur, Token *tok, Type *ty);
 Type *typename(Token **cur, Token *tok);
 Type *type_suffix(Token **cur, Token *tok, Type *ty);
+Type *array_dimensions(Token **cur, Token *tok, Type *ty);
 Type *func_params(Token **cur, Token *tok, Type *ty);
 
 Node *funcall(Token **cur, Token *tok);
