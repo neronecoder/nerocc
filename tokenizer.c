@@ -241,7 +241,7 @@ char *read_file(char *filename)
 
 bool is_keyword(Token *tok)
 {
-    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "char") || equal(tok, "int") || equal(tok, "sizeof") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "short") || equal(tok, "long") || equal(tok, "void") || equal(tok, "typedef") || equal(tok, "_Bool") || equal(tok, "enum") || equal(tok, "static") || equal(tok, "goto");
+    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "char") || equal(tok, "int") || equal(tok, "sizeof") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "short") || equal(tok, "long") || equal(tok, "void") || equal(tok, "typedef") || equal(tok, "_Bool") || equal(tok, "enum") || equal(tok, "static") || equal(tok, "goto") || equal(tok, "break");
 }
 
 void convert_keyword(Token *tok)

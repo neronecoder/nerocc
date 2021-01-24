@@ -189,8 +189,7 @@ typedef enum
     ND_LABEL,     // Labeled statement
     ND_FUNCALL,   // Function call
     ND_IF,        // if
-    ND_FOR,       // for
-    ND_WHILE,     // while
+    ND_FOR,       // used for "for" and "while"
     ND_VAR,       // Objiable
     ND_NUM,       // integer
     ND_CAST,      // Type case
@@ -230,6 +229,9 @@ struct Node
     char *label;
     char *unique_label;
     Node *goto_next;
+
+    // "break" label
+    char *break_label;
 
     Obj *var; // used if kind == ND_VAR
     int64_t val;
@@ -363,6 +365,7 @@ char *get_ident(Token *tok);
  *                      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
  *                      | "while" "(" expr ")" stmt
  *                      | "goto" ident ";"
+ *                      | "break" ";"
  *                      | ident ":" stmt
  *                      | exprexpr-stmt
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"

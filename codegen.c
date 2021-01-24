@@ -289,14 +289,17 @@ void gen_stmt(Node *node)
     case ND_FOR:
     {
         int c = count();
-        gen_stmt(node->init);
+        if (node->init)
+        {
+            gen_stmt(node->init);
+        }
         println(".L.begin.%d:", c);
         if (node->cond)
         {
             gen_expr(node->cond);
             println("    pop %%rax");
             println("    cmp $0, %%rax");
-            println("    je  .L.end.%d", c);
+            println("    je %s", node->break_label);
         }
         gen_stmt(node->then);
         if (node->inc)
@@ -305,21 +308,7 @@ void gen_stmt(Node *node)
             println("    pop %%rax");
         }
         println("    jmp .L.begin.%d", c);
-        println(".L.end.%d:", c);
-        return;
-    }
-    case ND_WHILE:
-    {
-        int c = count();
-        println(".L.begin.%d:", c);
-        gen_expr(node->cond);
-        println("    pop %%rax");
-        println("    cmp $0, %%rax");
-        println("    je  .L.end.%d", c);
-
-        gen_stmt(node->then);
-        println("    jmp .L.begin.%d", c);
-        println(".L.end.%d:", c);
+        println("%s:", node->break_label);
         return;
     }
     case ND_EXPR_STMT:

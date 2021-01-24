@@ -12,6 +12,9 @@ static Obj *current_func;
 Node *gotos;
 Node *labels;
 
+// Current "goto" jump taget.
+static char *break_label;
+
 Node *new_node(NodeKind kind, Token *tok)
 {
     Node *node = calloc(1, sizeof(Node));
@@ -777,6 +780,9 @@ Node *stmt(Token **cur, Token *tok)
 
         enter_scope();
 
+        char *brk = break_label;
+        break_label = node->break_label = new_unique_name();
+
         if (is_typename(tok))
         {
             Type *base_ty = declspec(&tok, tok, NULL);
@@ -799,17 +805,22 @@ Node *stmt(Token **cur, Token *tok)
         tok = skip(tok, ")");
         node->then = stmt(cur, tok);
         leave_scope();
+        break_label = brk;
         return node;
     }
 
     if (equal(tok, "while"))
     {
-        Node *node = new_node(ND_WHILE, tok);
+        Node *node = new_node(ND_FOR, tok);
         tok = skip(tok->next, "(");
         node->cond = expr(&tok, tok);
         tok = skip(tok, ")");
 
+        char *brk = break_label;
+        break_label = node->break_label = new_unique_name();
+
         node->then = stmt(cur, tok);
+        break_label = brk;
         return node;
     }
 
@@ -820,6 +831,18 @@ Node *stmt(Token **cur, Token *tok)
         node->goto_next = gotos;
         gotos = node;
         *cur = skip(tok->next->next, ";");
+        return node;
+    }
+
+    if (equal(tok, "break"))
+    {
+        if (!break_label)
+        {
+            error_tok(tok, "stray break");
+        }
+        Node *node = new_node(ND_GOTO, tok);
+        node->unique_label = break_label;
+        *cur = skip(tok->next, ";");
         return node;
     }
 
