@@ -29,6 +29,17 @@ Node *new_unary(NodeKind kind, Node *expr, Token *tok)
     return node;
 }
 
+Node *new_cast(Node *expr, Type *ty)
+{
+    add_type(expr);
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_CAST;
+    node->tok = expr->tok;
+    node->lhs = expr;
+    node->ty = copy_type(ty);
+    return node;
+}
+
 Node *new_num(int64_t val, Token *tok)
 {
     Node *node = new_node(ND_NUM, tok);
@@ -864,23 +875,39 @@ Node *sub_with_type(Node *lhs, Node *rhs, Token *tok)
 Node *mul(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    Node *node = unary(&tok, tok);
+    Node *node = cast(&tok, tok);
 
     for (;;)
     {
         if (equal(tok, "*"))
         {
-            node = new_binary(ND_MUL, node, unary(&tok, tok->next), tok);
+            node = new_binary(ND_MUL, node, cast(&tok, tok->next), tok);
             continue;
         }
         if (equal(tok, "/"))
         {
-            node = new_binary(ND_DIV, node, unary(&tok, tok->next), tok);
+            node = new_binary(ND_DIV, node, cast(&tok, tok->next), tok);
             continue;
         }
         *cur = tok;
         return node;
     }
+}
+
+Node *cast(Token **cur, Token *tok)
+{
+    print_node(tok, __FUNCTION__);
+    if (equal(tok, "(") && is_typename(tok->next))
+    {
+        Token *start = tok;
+        Type *ty = typename(&tok, tok->next);
+        tok = skip(tok, ")");
+        Node *node = new_cast(cast(cur, tok), ty);
+        node->tok = start;
+        return node;
+    }
+
+    return unary(cur, tok);
 }
 
 // Converts +primary, -primary to be 0 + primary, 0 - primary
@@ -889,28 +916,28 @@ Node *unary(Token **cur, Token *tok)
     print_node(tok, __FUNCTION__);
     if (equal(tok, "+"))
     {
-        Node *node = unary(&tok, tok->next);
+        Node *node = cast(&tok, tok->next);
         *cur = tok;
         return node;
     }
 
     if (equal(tok, "-"))
     {
-        Node *node = unary(&tok, tok->next);
+        Node *node = cast(&tok, tok->next);
         *cur = tok;
         return new_unary(ND_NEG, node, tok);
     }
 
     if (equal(tok, "*"))
     {
-        Node *node = unary(&tok, tok->next);
+        Node *node = cast(&tok, tok->next);
         *cur = tok;
         return new_unary(ND_DEREF, node, tok);
     }
 
     if (equal(tok, "&"))
     {
-        Node *node = unary(&tok, tok->next);
+        Node *node = cast(&tok, tok->next);
         *cur = tok;
         return new_unary(ND_ADDR, node, tok);
     }

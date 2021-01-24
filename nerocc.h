@@ -171,6 +171,7 @@ typedef enum
     ND_WHILE,     // while
     ND_VAR,       // Objiable
     ND_NUM,       // integer
+    ND_CAST,      // Type case
 } NodeKind;
 
 struct Node
@@ -282,6 +283,7 @@ Node *new_node(NodeKind kind, Token *tok);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
 
 Node *new_unary(NodeKind kind, Node *expr, Token *tok);
+Node *new_cast(Node *expr, Type *ty);
 
 // integer
 Node *new_num(int64_t val, Token *tok);
@@ -328,8 +330,9 @@ char *get_ident(Token *tok);
  * equality             = relational ("==" relational | "!=" relational)*
  * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add                  = mul ("+" mul | "-" mul)*
- * mul                  = unary ("*" unary | "/" unary)*
- * unary                = ("+" | "-" | "*" | "&")? unary | postfix
+ * mul                  = cast ("*" cast | "/" cast)*
+ * cast                 = "(" type-name ")" cast | unary
+ * unary                = ("+" | "-" | "*" | "&")? cast | postfix
  * postfix              = primary ("[" expr "]" | "." ident | "->" ident)*
  * primary              = "(" "{" stmt+ "}" ")"
  *                      | "(" expr ")"
@@ -373,6 +376,7 @@ Node *equality(Token **cur, Token *tok);
 Node *relational(Token **cur, Token *tok);
 Node *add(Token **cur, Token *tok);
 Node *mul(Token **cur, Token *tok);
+Node *cast(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
 Node *postfix(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
@@ -463,6 +467,8 @@ int align_to(int offset, int align);
 void load(Type *ty);
 void store(Type *ty);
 void store_gp(int r, int offset, int sz);
+void cast_type(Type *from, Type *to);
+int getTypeId(Type *ty);
 
 // Common util methods
 void error(char *fmt, ...);

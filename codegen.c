@@ -10,7 +10,28 @@ static char *argreg8[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
 static char *argreg16[] = {"%di", "%si", "%dx", "%cx", "%r8w", "%r9w"};
 static char *argreg32[] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
 static char *argreg64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-static Obj *current_func;
+
+static char i32i8[] = "movsbl %al, %eax";
+static char i32i16[] = "movswl %ax, %eax";
+static char i32i64[] = "movsxd %eax, %rax";
+
+enum
+{
+    I8,
+    I16,
+    I32,
+    I64
+};
+
+static char *cast_table[][10] = {
+    {NULL, NULL, NULL, i32i64},    // i8
+    {i32i8, NULL, NULL, i32i64},   // i16
+    {i32i8, i32i16, NULL, i32i64}, // i32
+    {i32i8, i32i16, NULL, NULL},   // i64
+};
+
+static Obj *
+    current_func;
 
 static FILE *output_file;
 
@@ -94,6 +115,36 @@ void store_gp(int r, int offset, int sz)
         return;
     }
     error("Size should be one of (1, 4, 8), %d given.", sz);
+}
+
+void cast_type(Type *from, Type *to)
+{
+    if (to->kind == TY_VOID)
+    {
+        return;
+    }
+
+    int t1 = getTypeId(from);
+    int t2 = getTypeId(to);
+
+    if (cast_table[t1][t2])
+    {
+        println("   %s", cast_table[t1][t2]);
+    }
+}
+
+int getTypeId(Type *ty)
+{
+    switch (ty->kind)
+    {
+    case TY_CHAR:
+        return I8;
+    case TY_SHORT:
+        return I16;
+    case TY_INT:
+        return I32;
+    }
+    return I64;
 }
 
 void gen_code(Obj *prog, FILE *out)
@@ -290,6 +341,12 @@ void gen_expr(Node *node)
             gen_stmt(n);
         }
         println("    push %%rax");
+        return;
+    case ND_CAST:
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        cast_type(node->lhs->ty, node->ty);
+        println("   push %%rax");
         return;
     case ND_FUNCALL:
     {
