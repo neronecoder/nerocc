@@ -239,47 +239,92 @@ Token *function(Token *tok, Type *base_ty)
 
 Type *declspec(Token **cur, Token *tok)
 {
-    if (equal(tok, "void"))
+    enum
     {
-        *cur = tok->next;
-        return ty_void;
+        VOID = 1 << 0,
+        CHAR = 1 << 2,
+        SHORT = 1 << 4,
+        INT = 1 << 6,
+        LONG = 1 << 8,
+        OTHER = 1 << 10,
+    };
+
+    Type *ty = ty_int;
+
+    int counter = 0;
+    while (is_typename(tok))
+    {
+        // Handle user-defined types.
+        if (equal(tok, "struct") || equal(tok, "union"))
+        {
+            if (equal(tok, "struct"))
+            {
+                ty = struct_decl(&tok, tok->next);
+            }
+            else
+            {
+                ty = union_decl(&tok, tok->next);
+            }
+
+            counter += OTHER;
+            continue;
+        }
+
+        // Handle built-in tyeps.
+
+        if (equal(tok, "void"))
+        {
+            counter += VOID;
+        }
+        else if (equal(tok, "char"))
+        {
+            counter += CHAR;
+        }
+        else if (equal(tok, "short"))
+        {
+            counter += SHORT;
+        }
+        else if (equal(tok, "int"))
+        {
+            counter += INT;
+        }
+        else if (equal(tok, "long"))
+        {
+            counter += LONG;
+        }
+        else
+        {
+            error_tok(tok, "Invalid type.");
+        }
+
+        switch (counter)
+        {
+        case VOID:
+            ty = ty_void;
+            break;
+        case CHAR:
+            ty = ty_char;
+            break;
+        case SHORT:
+        case SHORT + INT:
+            ty = ty_short;
+            break;
+        case INT:
+            ty = ty_int;
+            break;
+        case LONG:
+        case LONG + INT:
+            ty = ty_long;
+            break;
+        default:
+            error_tok(tok, "Invalid type.");
+        }
+        tok = tok->next;
     }
 
-    if (equal(tok, "char"))
-    {
-        *cur = tok->next;
-        return ty_char;
-    }
+    *cur = tok;
 
-    if (equal(tok, "int"))
-    {
-        *cur = tok->next;
-        return ty_int;
-    }
-
-    if (equal(tok, "short"))
-    {
-        *cur = tok->next;
-        return ty_short;
-    }
-
-    if (equal(tok, "long"))
-    {
-        *cur = tok->next;
-        return ty_long;
-    }
-
-    if (equal(tok, "struct"))
-    {
-        return struct_decl(cur, tok->next);
-    }
-
-    if (equal(tok, "union"))
-    {
-        return union_decl(cur, tok->next);
-    }
-
-    error("typename expected.");
+    return ty;
 }
 
 Type *declarator(Token **cur, Token *tok, Type *ty)
