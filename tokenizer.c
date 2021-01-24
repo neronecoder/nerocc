@@ -57,7 +57,7 @@ bool starts_with(char *p, char *q)
 // Read a punctuator token from p and returns its length.
 int read_punct(char *p)
 {
-    if (starts_with(p, "==") || starts_with(p, "!=") || starts_with(p, "<=") || starts_with(p, ">=") || starts_with(p, "->"))
+    if (starts_with(p, "==") || starts_with(p, "!=") || starts_with(p, "<=") || starts_with(p, ">=") || starts_with(p, "->") || starts_with(p, "+=") || starts_with(p, "-=") || starts_with(p, "*=") || starts_with(p, "/="))
     {
         return 2;
     }

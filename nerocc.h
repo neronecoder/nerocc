@@ -166,6 +166,7 @@ typedef enum
     ND_LT,        // less than <
     ND_LE,        // less than or equal to <=
     ND_ASSIGN,    // =
+    ND_COMMA,     // ,
     ND_MEMBER,    // . (struct member access)
     ND_ADDR,      // unary &
     ND_DEREF,     // unary *
@@ -342,8 +343,9 @@ char *get_ident(Token *tok);
  *                      | exprexpr-stmt
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"
  * expr-stmt            = expr? ";"
- * expr                 = assign
- * assign               = equality ("=" assign)?
+ * expr                 = assign ("," expr)?
+ * assign               = equality (assign-op assign)?
+ * assign-op            = "=" | "+=" | "-=" | "*=" | "/="
  * equality             = relational ("==" relational | "!=" relational)*
  * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add                  = mul ("+" mul | "-" mul)*
@@ -412,6 +414,7 @@ Node *sub_with_type(Node *lhs, Node *rhs, Token *tok);
 bool is_function(Token *tok);
 bool is_typename(Token *tok);
 Token *parse_typedef(Token *tok, Type *base_ty);
+Node *to_assign(Node *binary);
 
 void enter_scope();
 void leave_scope();

@@ -375,6 +375,11 @@ void gen_expr(Node *node)
         cast_type(node->lhs->ty, node->ty);
         println("   push %%rax");
         return;
+    case ND_COMMA:
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        gen_expr(node->rhs);
+        return;
     case ND_FUNCALL:
     {
         int nargs = 0;
@@ -490,6 +495,11 @@ void gen_addr(Node *node)
         println("    pop %%rax");
         println("    add $%d, %%rax", node->member->offset);
         println("    push %%rax");
+        return;
+    case ND_COMMA:
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        gen_addr(node->rhs);
         return;
     case ND_DEREF:
         gen_expr(node->lhs);
