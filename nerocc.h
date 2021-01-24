@@ -185,6 +185,8 @@ typedef enum
     ND_EXPR_STMT, // Expression statement # follow not sure what this is for
     ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for
     ND_BLOCK,     // block {...}
+    ND_GOTO,      // "goto"
+    ND_LABEL,     // Labeled statement
     ND_FUNCALL,   // Function call
     ND_IF,        // if
     ND_FOR,       // for
@@ -223,6 +225,11 @@ struct Node
     char *funcname;
     Type *func_ty;
     Node *args;
+
+    // Goto or labeled statement
+    char *label;
+    char *unique_label;
+    Node *goto_next;
 
     Obj *var; // used if kind == ND_VAR
     int64_t val;
@@ -355,6 +362,8 @@ char *get_ident(Token *tok);
  *                      | "if" "(" expr ")" stmt ("else" stmt)?
  *                      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
  *                      | "while" "(" expr ")" stmt
+ *                      | "goto" ident ";"
+ *                      | ident ":" stmt
  *                      | exprexpr-stmt
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"
  * expr-stmt            = expr? ";"
@@ -442,6 +451,7 @@ bool is_function(Token *tok);
 bool is_typename(Token *tok);
 Token *parse_typedef(Token *tok, Type *base_ty);
 Node *to_assign(Node *binary);
+void resolve_goto_labels();
 
 void enter_scope();
 void leave_scope();
