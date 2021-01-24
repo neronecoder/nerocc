@@ -1077,6 +1077,18 @@ Node *unary(Token **cur, Token *tok)
         return new_unary(ND_DEREF, node, tok);
     }
 
+    // Read ++i as i+=1
+    if (equal(tok, "++"))
+    {
+        return to_assign(add_with_type(unary(cur, tok->next), new_num(1, tok), tok));
+    }
+
+    // Read --i as i-=1
+    if (equal(tok, "--"))
+    {
+        return to_assign(sub_with_type(unary(cur, tok->next), new_num(1, tok), tok));
+    }
+
     if (equal(tok, "&"))
     {
         Node *node = cast(&tok, tok->next);
