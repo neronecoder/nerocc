@@ -201,7 +201,11 @@ Token *function(Token *tok, Type *base_ty)
 
     Obj *func = new_gvar(get_ident(ty->name), ty);
     func->is_function = true;
+    func->is_definition = !consume(&tok, tok, ";");
 
+    if (!func->is_definition) {
+        return tok;
+    }
     locals = NULL;
 
     enter_scope();

@@ -135,7 +135,7 @@ void emit_text(Obj *prog)
 {
     for (Obj *func = prog; func; func = func->next)
     {
-        if (!func->is_function)
+        if (!func->is_function || !func->is_definition)
         {
             continue;
         }
