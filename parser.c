@@ -550,8 +550,7 @@ Type *enum_specifier(Token **cur, Token *tok)
 
         if (equal(tok, "="))
         {
-            val = get_number(tok->next);
-            tok = tok->next->next;
+            val = const_expr(&tok, tok->next);
         }
 
         VarScope *sc = push_scope(name);
@@ -805,10 +804,9 @@ Node *stmt(Token **cur, Token *tok)
             error_tok(tok, "stray case");
         }
 
-        int val = get_number(tok->next);
-
         Node *node = new_node(ND_CASE, tok);
-        tok = skip(tok->next->next, ":");
+        int val = const_expr(&tok, tok->next);
+        tok = skip(tok, ":");
         node->label = new_unique_name();
         node->lhs = stmt(cur, tok);
         node->val = val;
@@ -1648,10 +1646,16 @@ Type *array_dimensions(Token **cur, Token *tok, Type *ty)
         return array_of(ty, -1);
     }
 
-    int sz = get_number(tok);
-    tok = skip(tok->next, "]");
+    int sz = const_expr(&tok, tok);
+    tok = skip(tok, "]");
     ty = type_suffix(cur, tok, ty);
     return array_of(ty, sz);
+}
+
+int64_t const_expr(Token **cur, Token *tok)
+{
+    Node *node = conditional(cur, tok);
+    return eval(node);
 }
 
 Type *func_params(Token **cur, Token *tok, Type *ty)
@@ -1758,4 +1762,73 @@ void resolve_goto_labels()
         }
     }
     gotos = labels = NULL;
+}
+
+int64_t eval(Node *node)
+{
+    add_type(node);
+
+    switch (node->kind)
+    {
+    case ND_ADD:
+        return eval(node->lhs) + eval(node->rhs);
+    case ND_SUB:
+        return eval(node->lhs) - eval(node->rhs);
+    case ND_MUL:
+        return eval(node->lhs) * eval(node->rhs);
+    case ND_DIV:
+        return eval(node->lhs) / eval(node->rhs);
+    case ND_NEG:
+        return -eval(node->lhs);
+    case ND_MOD:
+        return eval(node->lhs) % eval(node->rhs);
+    case ND_BITAND:
+        return eval(node->lhs) & eval(node->rhs);
+    case ND_BITOR:
+        return eval(node->lhs) | eval(node->rhs);
+    case ND_BITXOR:
+        return eval(node->lhs) ^ eval(node->rhs);
+    case ND_SHL:
+        return eval(node->lhs) << eval(node->rhs);
+    case ND_SHR:
+        return eval(node->lhs) >> eval(node->rhs);
+    case ND_EQ:
+        return eval(node->lhs) == eval(node->rhs);
+    case ND_NE:
+        return eval(node->lhs) != eval(node->rhs);
+    case ND_LT:
+        return eval(node->lhs) < eval(node->rhs);
+    case ND_LE:
+        return eval(node->lhs) <= eval(node->rhs);
+    case ND_COND:
+        return eval(node->cond) ? eval(node->then) : eval(node->els);
+    case ND_COMMA:
+        return eval(node->rhs);
+    case ND_NOT:
+        return !eval(node->lhs);
+    case ND_BITNOT:
+        return ~eval(node->lhs);
+    case ND_LOGAND:
+        return eval(node->lhs) && eval(node->rhs);
+    case ND_LOGOR:
+        return eval(node->lhs) || eval(node->rhs);
+    case ND_CAST:
+        if (is_integer(node->ty))
+        {
+            switch (node->ty->size)
+            {
+            case 1:
+                return (uint8_t)eval(node->lhs);
+            case 2:
+                return (uint16_t)eval(node->lhs);
+            case 4:
+                return (uint32_t)eval(node->lhs);
+            }
+        }
+        return eval(node->lhs);
+    case ND_NUM:
+        return node->val;
+    }
+
+    error_tok(node->tok, "Not a compile-time constant");
 }

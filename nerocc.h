@@ -376,7 +376,7 @@ char *get_ident(Token *tok);
  *                      | "{" compound-stmt
  *                      | "if" "(" expr ")" stmt ("else" stmt)?
  *                      | "switch" "(" expr ")" stmt
- *                      | "case" num ":" stmt
+ *                      | "case" const-expr ":" stmt
  *                      | "default" ":" stmt
  *                      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
  *                      | "while" "(" expr ")" stmt
@@ -414,7 +414,7 @@ char *get_ident(Token *tok);
  * type-suffix          = "(" func-params
  *                      | "[" array-dimensions
  *                      | ɛ
- * array-dimensions     = num? "]" type-suffix
+ * array-dimensions     = const-expr? "]" type-suffix
  * type-name            = declspec abstract-declarator
  * abstract-declarator  = "*"* ("(" abstract-declarator ")")? type-suffix
  * func-args            = "(" (assign ("," assign)*)? ")"
@@ -445,6 +445,7 @@ Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
 Node *assign(Token **cur, Token *tok);
+int64_t const_expr(Token **cur, Token *tok);
 Node *conditional(Token **cur, Token *tok);
 Node *logor(Token **cur, Token *tok);
 Node *logand(Token **cur, Token *tok);
@@ -476,6 +477,7 @@ bool is_typename(Token *tok);
 Token *parse_typedef(Token *tok, Type *base_ty);
 Node *to_assign(Node *binary);
 void resolve_goto_labels();
+int64_t eval(Node *node);
 
 void enter_scope();
 void leave_scope();
