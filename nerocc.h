@@ -78,6 +78,9 @@ Type *array_of(Type *base, int len);
 void add_type(Node *node);
 Type *copy_type(Type *ty);
 
+Type *get_common_type(Type *ty1, Type *ty2);
+void usual_arith_conv(Node **lhs, Node **rhs);
+
 // Tokenizer
 typedef enum
 {
@@ -287,6 +290,8 @@ Node *new_cast(Node *expr, Type *ty);
 
 // integer
 Node *new_num(int64_t val, Token *tok);
+
+Node *new_long(int64_t val, Token *tok);
 
 // identifier
 Node *new_var_node(Obj *var, Token *tok);

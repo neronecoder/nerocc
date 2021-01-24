@@ -10,7 +10,7 @@ int main()
     ASSERT(15, 5 * (9 - 6));
     ASSERT(4, (3 + 5) / 2);
     ASSERT(10, -10 + 20);
-    ASSERT(10, - -10);
+    ASSERT(10, - - 10);
     ASSERT(10, - - +10);
 
     ASSERT(0, 0 == 1);
@@ -31,6 +31,8 @@ int main()
     ASSERT(1, 1 >= 0);
     ASSERT(1, 1 >= 1);
     ASSERT(0, 1 >= 2);
+
+    ASSERT(0, 1073741824 * 100 / 100);
 
     printf("OK\n");
     return 0;
