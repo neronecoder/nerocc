@@ -173,6 +173,7 @@ typedef enum
     ND_ADDR,      // unary &
     ND_DEREF,     // unary *
     ND_NOT,       // !
+    ND_BITNOT,    // ~
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement # follow not sure what this is for
     ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for
@@ -357,7 +358,7 @@ char *get_ident(Token *tok);
  * add                  = mul ("+" mul | "-" mul)*
  * mul                  = cast ("*" cast | "/" cast)*
  * cast                 = "(" type-name ")" cast | unary
- * unary                = ("+" | "-" | "*" | "&")? cast | ("++" | "--") unary | postfix
+ * unary                = ("+" | "-" | "*" | "&" | "!" | "~")? cast | ("++" | "--") unary | postfix
  * postfix              = primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
  * primary              = "(" "{" stmt+ "}" ")"
  *                      | "(" expr ")"

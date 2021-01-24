@@ -388,6 +388,12 @@ void gen_expr(Node *node)
         println("   movzx %%al, %%rax");
         println("   push %%rax");
         return;
+    case ND_BITNOT:
+        gen_expr(node->lhs);
+        println("   pop %%rax");
+        println("   not %%rax");
+        println("   push %%rax");
+        return;
     case ND_FUNCALL:
     {
         int nargs = 0;
