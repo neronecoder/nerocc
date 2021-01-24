@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 
 #define LOG 0
 
@@ -141,6 +142,7 @@ char *read_file(char *filename);
 void convert_keyword(Token *tok);
 void add_line_numbers(Token *tok);
 
+Token *read_int_literal(char *p);
 Token *read_char_literal(char *p);
 Token *read_string_literal(char *p);
 char *string_literal_end(char *p);
