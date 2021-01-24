@@ -333,6 +333,7 @@ char *get_ident(Token *tok);
  * postfix              = primary ("[" expr "]" | "." ident | "->" ident)*
  * primary              = "(" "{" stmt+ "}" ")"
  *                      | "(" expr ")"
+ *                      | "sizeof" "(" type-name ")"
  *                      | "sizeof" unary
  *                      | ident func-args?
  *                      | str
@@ -340,6 +341,8 @@ char *get_ident(Token *tok);
  * type-suffix          = "(" func-params
  *                      | "[" num "]" type-suffix
  *                      | ɛ
+ * type-name            = declspec abstract-declarator
+ * abstract-declarator  = "*"* ("(" abstract-declarator ")")? type-suffix
  * func-args            = "(" (assign ("," assign)*)? ")"
  * func-params          = (param ("," param)*)? ")"
  * param                = declspec delarator
@@ -373,6 +376,8 @@ Node *mul(Token **cur, Token *tok);
 Node *unary(Token **cur, Token *tok);
 Node *postfix(Token **cur, Token *tok);
 Node *primary(Token **cur, Token *tok);
+Type *abstract_declarator(Token **cur, Token *tok, Type *ty);
+Type *typename(Token **cur, Token *tok);
 Type *type_suffix(Token **cur, Token *tok, Type *ty);
 Type *func_params(Token **cur, Token *tok, Type *ty);
 Node *func_args(Token **cur, Token *tok);

@@ -960,6 +960,7 @@ Node *postfix(Token **cur, Token *tok)
 Node *primary(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
+    Token *start = tok;
     if (tok->kind == TK_NUM)
     {
         Node *node = new_num(tok->val, tok);
@@ -972,6 +973,13 @@ Node *primary(Token **cur, Token *tok)
         Obj *var = new_string_literal(tok->str, tok->ty);
         *cur = tok->next;
         return new_var_node(var, tok);
+    }
+
+    if (equal(tok, "sizeof") && equal(tok->next, "(") && is_typename(tok->next->next))
+    {
+        Type *ty = typename(&tok, tok->next->next);
+        *cur = skip(tok, ")");
+        return new_num(ty->size, start);
     }
 
     if (equal(tok, "sizeof"))
@@ -1019,6 +1027,33 @@ Node *primary(Token **cur, Token *tok)
     }
 
     error("Expected an expression");
+}
+
+Type *abstract_declarator(Token **cur, Token *tok, Type *ty)
+{
+    while (equal(tok, "*"))
+    {
+        ty = pointer_to(ty);
+        tok = tok->next;
+    }
+
+    if (equal(tok, "("))
+    {
+        Token *start = tok;
+        Type dummy = {};
+        abstract_declarator(&tok, start->next, &dummy);
+        tok = skip(tok, ")");
+        ty = type_suffix(cur, tok, ty);
+        return abstract_declarator(&tok, start->next, ty);
+    }
+
+    return type_suffix(cur, tok, ty);
+}
+
+Type *typename(Token **cur, Token *tok)
+{
+    Type *ty = declspec(&tok, tok, NULL);
+    return abstract_declarator(cur, tok, ty);
 }
 
 Type *type_suffix(Token **cur, Token *tok, Type *ty)
