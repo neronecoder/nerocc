@@ -203,7 +203,8 @@ Token *function(Token *tok, Type *base_ty)
     func->is_function = true;
     func->is_definition = !consume(&tok, tok, ";");
 
-    if (!func->is_definition) {
+    if (!func->is_definition)
+    {
         return tok;
     }
     locals = NULL;
@@ -238,6 +239,12 @@ Token *function(Token *tok, Type *base_ty)
 
 Type *declspec(Token **cur, Token *tok)
 {
+    if (equal(tok, "void"))
+    {
+        *cur = tok->next;
+        return ty_void;
+    }
+
     if (equal(tok, "char"))
     {
         *cur = tok->next;
@@ -318,6 +325,10 @@ Node *declaration(Token **cur, Token *tok)
         }
 
         Type *ty = declarator(&tok, tok, base_ty);
+        if (ty->kind == TY_VOID)
+        {
+            error_tok(tok, "variable declared void.");
+        }
         Obj *var = new_lvar(get_ident(ty->name), ty);
 
         if (!equal(tok, "="))
@@ -995,5 +1006,5 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union");
+    return equal(tok, "void") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union");
 }

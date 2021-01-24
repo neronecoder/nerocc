@@ -27,6 +27,7 @@ typedef struct TagScope TagScope;
 // Type
 typedef enum
 {
+    TY_VOID,
     TY_CHAR,
     TY_SHORT,
     TY_INT,
@@ -62,6 +63,7 @@ struct Type
     Type *next;
 };
 
+extern Type *ty_void;
 extern Type *ty_char;
 extern Type *ty_int;
 extern Type *ty_short;
@@ -294,7 +296,7 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = "char" | "int" | "short" | "long" | struct-decl | union-decl
+ * declspec             = "void" | "char" | "int" | "short" | "long" | struct-decl | union-decl
  * declarator           = "*"* ("(" ident ")" | "(" declarator ")" | ident) type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
