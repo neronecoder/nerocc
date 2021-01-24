@@ -34,6 +34,7 @@ typedef enum
     TY_SHORT,
     TY_INT,
     TY_LONG,
+    TY_ENUM,
     TY_PTR,
     TY_FUNC,
     TY_ARRAY,
@@ -77,6 +78,7 @@ bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
 Type *array_of(Type *base, int len);
+Type *enum_type();
 void add_type(Node *node);
 Type *copy_type(Type *ty);
 
@@ -249,13 +251,15 @@ struct VarScope
     Obj *var;
 
     Type *type_def;
+    Type *enum_ty;
+    int enum_val;
 };
 
 struct Scope
 {
     Scope *next;
 
-    // C has two block scopes, one is for variable and the other is for struct tag.
+    // C has two block scopes, one is for variable/typedefs and the other is for struct/union/enum tag.
     VarScope *vars;
     TagScope *tags;
 };
@@ -269,7 +273,7 @@ struct Member
     int offset;
 };
 
-// Scope for struct tag
+// Scope for struct, union or enum tags.
 struct TagScope
 {
     TagScope *next;
@@ -324,6 +328,8 @@ char *get_ident(Token *tok);
  * function-definition  = declspec declarator "{" compound-stmt
  * struct-decl          = "struct" struct-or-union-decl
  * union-decl           = "union" struct-or-union-decl
+ * enum-specifier       = ident? "{" enum-list? "}" | ident ("{" enum-list? "}")?
+ * enum-list            = ident ("=" num)? ("," ident ("=" num)?)*
  * struct-or-union-decl = ident? ("{" struct-members)?
  * struct-members       = (declspec declarator ("," declarator)* ";")*
  * stmt                 = "return" expr ";" 
@@ -369,6 +375,8 @@ Token *function(Token *tok, Type *base_ty);
 Type *declspec(Token **cur, Token *tok, VarAttr *attr);
 Type *declarator(Token **cur, Token *tok, Type *ty);
 Node *declaration(Token **cur, Token *tok, Type *base_ty);
+Type *enum_specifier(Token **cur, Token *tok);
+
 Type *struct_decl(Token **cur, Token *tok);
 Type *union_decl(Token **cur, Token *tok);
 Type *struct_or_union_decl(Token **cur, Token *tok);

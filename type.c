@@ -19,7 +19,7 @@ Type *new_type(TypeKind kind, int size, int align)
 bool is_integer(Type *ty)
 {
     TypeKind kind = ty->kind;
-    return kind == TY_BOOL || kind == TY_CHAR || kind == TY_INT || kind == TY_SHORT || kind == TY_LONG;
+    return kind == TY_BOOL || kind == TY_CHAR || kind == TY_INT || kind == TY_SHORT || kind == TY_LONG || kind == TY_ENUM;
 }
 
 Type *pointer_to(Type *base)
@@ -43,6 +43,11 @@ Type *array_of(Type *base, int len)
     ty->base = base;
     ty->array_len = len;
     return ty;
+}
+
+Type *enum_type()
+{
+    return new_type(TY_ENUM, 4, 4);
 }
 
 void add_type(Node *node)

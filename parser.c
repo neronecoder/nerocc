@@ -312,7 +312,7 @@ Type *declspec(Token **cur, Token *tok, VarAttr *attr)
 
         // Handle user-defined types.
         Type *ty2 = find_typedef(tok);
-        if (equal(tok, "struct") || equal(tok, "union") || ty2)
+        if (equal(tok, "struct") || equal(tok, "union") || equal(tok, "enum") || ty2)
         {
             if (counter)
             {
@@ -325,6 +325,10 @@ Type *declspec(Token **cur, Token *tok, VarAttr *attr)
             else if (equal(tok, "union"))
             {
                 ty = union_decl(&tok, tok->next);
+            }
+            else if (equal(tok, "enum"))
+            {
+                ty = enum_specifier(&tok, tok->next);
             }
             else
             {
@@ -465,6 +469,67 @@ Node *declaration(Token **cur, Token *tok, Type *base_ty)
     node->body = head.next;
     *cur = tok->next;
     return node;
+}
+
+Type *enum_specifier(Token **cur, Token *tok)
+{
+    Type *ty = enum_type();
+
+    // Read a struct tag.
+    Token *tag = NULL;
+    if (tok->kind == TK_IDENT)
+    {
+        tag = tok;
+        tok = tok->next;
+    }
+
+    if (tag && !(equal(tok, "{")))
+    {
+        Type *ty = find_tag(tag);
+        if (!ty)
+        {
+            error_tok(tag, "Unknown enum type.");
+        }
+        if (ty->kind != TY_ENUM)
+        {
+            error_tok(tag, "not an enum tag.");
+        }
+        *cur = tok;
+        return ty;
+    }
+
+    tok = skip(tok, "{");
+
+    // Read an enum-list.
+    int i = 0;
+    int val = 0;
+    while (!equal(tok, "}"))
+    {
+        if (i++ > 0)
+        {
+            tok = skip(tok, ",");
+        }
+
+        char *name = get_ident(tok);
+        tok = tok->next;
+
+        if (equal(tok, "="))
+        {
+            val = get_number(tok->next);
+            tok = tok->next->next;
+        }
+
+        VarScope *sc = push_scope(name);
+        sc->enum_ty = ty;
+        sc->enum_val = val++;
+    }
+
+    *cur = tok->next;
+    if (tag)
+    {
+        push_tag_scope(tag, ty);
+    }
+    return ty;
 }
 
 Type *struct_decl(Token **cur, Token *tok)
@@ -1050,15 +1115,24 @@ Node *primary(Token **cur, Token *tok)
             return funcall(cur, tok);
         }
 
-        // Variable
-        Node *node = new_node(ND_VAR, tok);
+        // Variable or enum constant
         VarScope *sc = find_var(tok);
-        if (!sc || !sc->var)
+        if (!sc || (!sc->var && !sc->enum_ty))
         {
-            error("Undefined variable '%s'", strndup(tok->loc, tok->len));
+            error_tok(tok, "Undefined variable");
+        }
+
+        Node *node;
+        if (sc->var)
+        {
+            node = new_var_node(sc->var, tok);
+        }
+        else
+        {
+            node = new_num(sc->enum_val, tok);
         }
         *cur = tok->next;
-        return new_var_node(sc->var, tok);
+        return node;
     }
 
     if (equal(tok, "(") && equal(tok->next, "{"))
@@ -1215,7 +1289,7 @@ bool is_function(Token *tok)
 
 bool is_typename(Token *tok)
 {
-    return equal(tok, "void") || equal(tok, "_Bool") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "typedef") || find_typedef(tok);
+    return equal(tok, "void") || equal(tok, "_Bool") || equal(tok, "char") || equal(tok, "int") || equal(tok, "short") || equal(tok, "long") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "typedef") || equal(tok, "enum") || find_typedef(tok);
 }
 
 Token *parse_typedef(Token *tok, Type *base_ty)
