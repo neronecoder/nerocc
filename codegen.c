@@ -555,6 +555,15 @@ void gen_expr(Node *node)
             println("    setle %%al");
         }
         println("    movzb %%al, %%rax");
+        break;
+    case ND_SHL:
+        println("   mov %%rdi, %%rcx");
+        println("   shl %%cl, %s", ax);
+        break;
+    case ND_SHR:
+        println("   mov %%rdi, %%rcx");
+        println("   sar %%cl, %s", ax);
+        break;
     }
 
     println("    push %%rax");

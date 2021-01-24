@@ -181,6 +181,8 @@ typedef enum
     ND_BITAND,    // &
     ND_BITOR,     // |
     ND_BITXOR,    // ^
+    ND_SHL,       // <<
+    ND_SHR,       // >>
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement # follow not sure what this is for
     ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for
@@ -386,14 +388,15 @@ char *get_ident(Token *tok);
  * expr-stmt            = expr? ";"
  * expr                 = assign ("," expr)?
  * assign               = logor (assign-op assign)?
- * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^="
+ * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>="
  * logor                = logand ("||" logand)*
  * logand               = bitor ("&&" bitor)*
  * bitor                = bitxor ("|" bitxor)*
  * bitxor               = bitand ("^" bitand)*
  * bitand               = equality ("&" equality)*
  * equality             = relational ("==" relational | "!=" relational)*
- * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
+ * relational           = shift ("<" shift | "<=" shift | ">" shift | ">=" shift)*
+ * shift                = add ("<<" add | ">>" add)*
  * add                  = mul ("+" mul | "-" mul)*
  * mul                  = cast ("*" cast | "/" cast | "%" cast)*
  * cast                 = "(" type-name ")" cast | unary
@@ -447,6 +450,7 @@ Node *bitxor(Token **cur, Token *tok);
 Node *bitand(Token **cur, Token *tok);
 Node *equality(Token **cur, Token *tok);
 Node *relational(Token **cur, Token *tok);
+Node *shift(Token **cur, Token *tok);
 Node *add(Token **cur, Token *tok);
 Node *mul(Token **cur, Token *tok);
 Node *cast(Token **cur, Token *tok);

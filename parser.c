@@ -1048,6 +1048,16 @@ Node *assign(Token **cur, Token *tok)
     {
         return to_assign(new_binary(ND_BITXOR, node, assign(cur, tok->next), tok));
     }
+
+    if (equal(tok, "<<="))
+    {
+        return to_assign(new_binary(ND_SHL, node, assign(cur, tok->next), tok));
+    }
+
+    if (equal(tok, ">>="))
+    {
+        return to_assign(new_binary(ND_SHR, node, assign(cur, tok->next), tok));
+    }
     *cur = tok;
     return node;
 }
@@ -1142,30 +1152,53 @@ Node *equality(Token **cur, Token *tok)
 Node *relational(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    Node *node = add(&tok, tok);
+    Node *node = shift(&tok, tok);
 
     for (;;)
     {
         if (equal(tok, "<"))
         {
-            node = new_binary(ND_LT, node, add(&tok, tok->next), tok);
+            node = new_binary(ND_LT, node, shift(&tok, tok->next), tok);
             continue;
         }
         if (equal(tok, "<="))
         {
-            node = new_binary(ND_LE, node, add(&tok, tok->next), tok);
+            node = new_binary(ND_LE, node, shift(&tok, tok->next), tok);
             continue;
         }
         if (equal(tok, ">"))
         {
-            node = new_binary(ND_LT, add(&tok, tok->next), node, tok);
+            node = new_binary(ND_LT, shift(&tok, tok->next), node, tok);
             continue;
         }
         if (equal(tok, ">="))
         {
-            node = new_binary(ND_LE, add(&tok, tok->next), node, tok);
+            node = new_binary(ND_LE, shift(&tok, tok->next), node, tok);
             continue;
         }
+        *cur = tok;
+        return node;
+    }
+}
+
+Node *shift(Token **cur, Token *tok)
+{
+    Node *node = add(&tok, tok);
+
+    for (;;)
+    {
+        Token *start = tok;
+        if (equal(tok, "<<"))
+        {
+            node = new_binary(ND_SHL, node, add(&tok, tok->next), start);
+            continue;
+        }
+        if (equal(tok, ">>"))
+        {
+            node = new_binary(ND_SHR, node, add(&tok, tok->next), start);
+            continue;
+        }
+
         *cur = tok;
         return node;
     }
@@ -1489,7 +1522,7 @@ Node *primary(Token **cur, Token *tok)
         return node;
     }
 
-    error("Expected an expression");
+    error_tok(tok, "Expected an expression");
 }
 
 Node *funcall(Token **cur, Token *tok)
