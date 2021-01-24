@@ -307,6 +307,9 @@ Node *new_long(int64_t val, Token *tok);
 // identifier
 Node *new_var_node(Obj *var, Token *tok);
 
+// Convert A++ to `(typeof A)((A+=1) - 1)`
+Node *new_inc_dec(Node *node, Token *tok, int addend);
+
 // Functions for variable
 Obj *new_var(char *name, Type *ty);
 Obj *new_lvar(char *name, Type *ty);
@@ -352,7 +355,7 @@ char *get_ident(Token *tok);
  * mul                  = cast ("*" cast | "/" cast)*
  * cast                 = "(" type-name ")" cast | unary
  * unary                = ("+" | "-" | "*" | "&")? cast | ("++" | "--") unary | postfix
- * postfix              = primary ("[" expr "]" | "." ident | "->" ident)*
+ * postfix              = primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
  * primary              = "(" "{" stmt+ "}" ")"
  *                      | "(" expr ")"
  *                      | "sizeof" "(" type-name ")"

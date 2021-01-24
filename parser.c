@@ -92,6 +92,13 @@ Obj *new_var(char *name, Type *ty)
     return var;
 }
 
+// Convert A++ to `(typeof A)((A+=1) - 1)`
+Node *new_inc_dec(Node *node, Token *tok, int addend)
+{
+    add_type(node);
+    return new_cast(add_with_type(to_assign(add_with_type(node, new_num(addend, tok), tok)), new_num(-addend, tok), tok), node->ty);
+}
+
 VarScope *find_var(Token *tok)
 {
     for (Scope *sc = scope; sc; sc = sc->next)
@@ -1130,6 +1137,20 @@ Node *postfix(Token **cur, Token *tok)
             node = new_unary(ND_DEREF, node, tok);
             node = struct_ref(node, tok->next);
             tok = tok->next->next;
+            continue;
+        }
+
+        if (equal(tok, "++"))
+        {
+            node = new_inc_dec(node, tok, 1);
+            tok = tok->next;
+            continue;
+        }
+
+        if (equal(tok, "--"))
+        {
+            node = new_inc_dec(node, tok, -1);
+            tok = tok->next;
             continue;
         }
 
