@@ -1029,8 +1029,20 @@ Node *primary(Token **cur, Token *tok)
         // Check func call
         if (equal(tok->next, "("))
         {
+            VarScope *sc = find_var(tok);
+            if (!sc)
+            {
+                error_tok(tok, "implicit declaration of a function.");
+            }
+            if (!sc->var || sc->var->ty->kind != TY_FUNC)
+            {
+                error_tok(tok, "not a function.");
+            }
+            Type *ty = sc->var->ty->return_ty;
+
             Node *node = new_node(ND_FUNCALL, tok);
             node->funcname = strndup(tok->loc, tok->len);
+            node->ty = ty;
             node->args = func_args(&tok, tok->next);
             *cur = tok;
             return node;
@@ -1147,6 +1159,7 @@ Node *func_args(Token **cur, Token *tok)
         }
         cur_node->next = assign(&tok, tok);
         cur_node = cur_node->next;
+        add_type(cur_node);
     }
 
     tok = skip(tok, ")");
