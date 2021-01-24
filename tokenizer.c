@@ -40,7 +40,7 @@ Token *skip(Token *tok, char *s)
     return tok->next;
 }
 
-int get_number(Token *tok)
+long get_number(Token *tok)
 {
     if (tok->kind != TK_NUM)
     {
@@ -233,7 +233,7 @@ char *read_file(char *filename)
 
 bool is_keyword(Token *tok)
 {
-    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "char") || equal(tok, "int") || equal(tok, "sizeof") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "short") || equal(tok, "long") || equal(tok, "void");
+    return equal(tok, "return") || equal(tok, "if") || equal(tok, "else") || equal(tok, "for") || equal(tok, "while") || equal(tok, "char") || equal(tok, "int") || equal(tok, "sizeof") || equal(tok, "struct") || equal(tok, "union") || equal(tok, "short") || equal(tok, "long") || equal(tok, "void") || equal(tok, "typedef");
 }
 
 void convert_keyword(Token *tok)

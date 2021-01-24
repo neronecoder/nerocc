@@ -23,6 +23,7 @@ typedef struct Member Member;
 typedef struct VarScope VarScope;
 typedef struct Scope Scope;
 typedef struct TagScope TagScope;
+typedef struct VarAttr VarAttr;
 
 // Type
 typedef enum
@@ -110,7 +111,7 @@ bool equal(Token *tok, char *op);
 // Consumes the current token if it matches 's'
 Token *skip(Token *tok, char *s);
 
-int get_number(Token *tok);
+long get_number(Token *tok);
 
 bool starts_with(char *p, char *q);
 
@@ -232,11 +233,14 @@ struct Obj
     int stack_size;
 };
 
+// Scope for local, global variables or typedefs.
 struct VarScope
 {
     VarScope *next;
     char *name;
     Obj *var;
+
+    Type *type_def;
 };
 
 struct Scope
@@ -265,6 +269,12 @@ struct TagScope
     Type *ty;
 };
 
+// Variable attributes such as typedef or extern.
+struct VarAttr
+{
+    bool is_typedef;
+};
+
 // Functions for node creation
 Node *new_node(NodeKind kind, Token *tok);
 
@@ -283,7 +293,8 @@ Node *new_var_node(Obj *var, Token *tok);
 Obj *new_var(char *name, Type *ty);
 Obj *new_lvar(char *name, Type *ty);
 Obj *new_gvar(char *name, Type *ty);
-Obj *find_var(Token *tok);
+VarScope *find_var(Token *tok);
+Type *find_typedef(Token *tok);
 
 Type *find_tag(Token *tok);
 
@@ -296,7 +307,7 @@ char *get_ident(Token *tok);
 
 /* Grammar
  * program              = (function-definition | global-variable)*
- * declspec             = "void" | "char" | "int" | "short" | "long" | struct-decl | union-decl
+ * declspec             = ("void" | "char" | "int" | "short" | "long" | "typedef" | struct-decl | union-decl)+
  * declarator           = "*"* ("(" ident ")" | "(" declarator ")" | ident) type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
  * function-definition  = declspec declarator "{" compound-stmt
@@ -310,7 +321,7 @@ char *get_ident(Token *tok);
  *                      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
  *                      | "while" "(" expr ")" stmt
  *                      | exprexpr-stmt
- * compound-stmt        = (declaration | stmt)* "}"
+ * compound-stmt        = ("typedef" | declaration | stmt)* "}"
  * expr-stmt            = expr? ";"
  * expr                 = assign
  * assign               = equality ("=" assign)?
@@ -340,9 +351,9 @@ void print_node(Token *cur, const char *func);
 Obj *parse(Token *tok);
 
 Token *function(Token *tok, Type *base_ty);
-Type *declspec(Token **cur, Token *tok);
+Type *declspec(Token **cur, Token *tok, VarAttr *attr);
 Type *declarator(Token **cur, Token *tok, Type *ty);
-Node *declaration(Token **cur, Token *tok);
+Node *declaration(Token **cur, Token *tok, Type *base_ty);
 Type *struct_decl(Token **cur, Token *tok);
 Type *union_decl(Token **cur, Token *tok);
 Type *struct_or_union_decl(Token **cur, Token *tok);
@@ -371,10 +382,11 @@ Node *sub_with_type(Node *lhs, Node *rhs, Token *tok);
 
 bool is_function(Token *tok);
 bool is_typename(Token *tok);
+Token *parse_typedef(Token *tok, Type *base_ty);
 
 void enter_scope();
 void leave_scope();
-VarScope *push_scope(char *name, Obj *var);
+VarScope *push_scope(char *name);
 
 // Scope for struct or union tag
 void push_tag_scope(Token *tok, Type *ty);
