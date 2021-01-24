@@ -1463,9 +1463,19 @@ Type *func_params(Token **cur, Token *tok, Type *ty)
             tok = skip(tok, ",");
         }
 
-        Type *base_ty = declspec(&tok, tok, NULL);
-        Type *ty = declarator(&tok, tok, base_ty);
-        cur_type->next = copy_type(ty);
+        Type *ty2 = declspec(&tok, tok, NULL);
+        ty2 = declarator(&tok, tok, ty2);
+
+        // "array of T" is converted to "pointer to T" only in the parameter context.
+        // For example, *argv[] is converted to **argv by this.
+        if (ty2->kind == TY_ARRAY)
+        {
+            Token *name = ty2->name;
+            ty2 = pointer_to(ty2->base);
+            ty2->name = name;
+        }
+
+        cur_type->next = copy_type(ty2);
         cur_type = cur_type->next;
     }
 
