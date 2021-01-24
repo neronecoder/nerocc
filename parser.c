@@ -1003,7 +1003,7 @@ Node *expr(Token **cur, Token *tok)
 Node *assign(Token **cur, Token *tok)
 {
     print_node(tok, __FUNCTION__);
-    Node *node = logor(&tok, tok);
+    Node *node = conditional(&tok, tok);
     if (equal(tok, "="))
     {
         return new_binary(ND_ASSIGN, node, assign(cur, tok->next), tok);
@@ -1059,6 +1059,25 @@ Node *assign(Token **cur, Token *tok)
         return to_assign(new_binary(ND_SHR, node, assign(cur, tok->next), tok));
     }
     *cur = tok;
+    return node;
+}
+
+Node *conditional(Token **cur, Token *tok)
+{
+    Node *cond = logor(&tok, tok);
+
+    if (!equal(tok, "?"))
+    {
+        *cur = tok;
+        return cond;
+    }
+
+    Node *node = new_node(ND_COND, tok);
+    node->cond = cond;
+    node->then = expr(&tok, tok->next);
+
+    tok = skip(tok, ":");
+    node->els = conditional(cur, tok);
     return node;
 }
 

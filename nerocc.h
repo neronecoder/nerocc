@@ -169,6 +169,7 @@ typedef enum
     ND_LT,        // less than <
     ND_LE,        // less than or equal to <=
     ND_ASSIGN,    // =
+    ND_COND,      // ?:
     ND_COMMA,     // ,
     ND_MEMBER,    // . (struct member access)
     ND_ADDR,      // unary &
@@ -387,7 +388,8 @@ char *get_ident(Token *tok);
  * compound-stmt        = ("typedef" | declaration | stmt)* "}"
  * expr-stmt            = expr? ";"
  * expr                 = assign ("," expr)?
- * assign               = logor (assign-op assign)?
+ * assign               = conditional (assign-op assign)?
+ * conditional          = logor ("?" expr ":" conditional)?
  * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>="
  * logor                = logand ("||" logand)*
  * logand               = bitor ("&&" bitor)*
@@ -443,6 +445,7 @@ Node *compound_stmt(Token **cur, Token *tok);
 Node *expr_stmt(Token **cur, Token *tok);
 Node *expr(Token **cur, Token *tok);
 Node *assign(Token **cur, Token *tok);
+Node *conditional(Token **cur, Token *tok);
 Node *logor(Token **cur, Token *tok);
 Node *logand(Token **cur, Token *tok);
 Node * bitor (Token * *cur, Token *tok);

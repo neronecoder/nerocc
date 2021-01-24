@@ -401,6 +401,23 @@ void gen_expr(Node *node)
         println("   pop %%rax");
         gen_expr(node->rhs);
         return;
+    case ND_COND:
+    {
+        int c = count();
+        gen_expr(node->cond);
+        println("   pop %%rax");
+        println("   cmp $0, %%rax");
+        println("   je .L.else.%d", c);
+        gen_expr(node->then);
+        println("   pop %%rax");
+        println("   jmp .L.end.%d", c);
+        println(".L.else.%d:", c);
+        gen_expr(node->els);
+        println("   pop %%rax");
+        println(".L.end.%d:", c);
+        println("   push %%rax");
+        return;
+    }
     case ND_NOT:
         gen_expr(node->lhs);
         println("   pop %%rax");
