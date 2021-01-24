@@ -734,7 +734,19 @@ Node *stmt(Token **cur, Token *tok)
     {
         Node *node = new_node(ND_FOR, tok);
         tok = skip(tok->next, "(");
-        node->init = expr_stmt(&tok, tok);
+
+        enter_scope();
+
+        if (is_typename(tok))
+        {
+            Type *base_ty = declspec(&tok, tok, NULL);
+            node->init = declaration(&tok, tok, base_ty);
+        }
+        else
+        {
+            node->init = expr_stmt(&tok, tok);
+        }
+
         if (!equal(tok, ";"))
         {
             node->cond = expr(&tok, tok);
@@ -746,6 +758,7 @@ Node *stmt(Token **cur, Token *tok)
         }
         tok = skip(tok, ")");
         node->then = stmt(cur, tok);
+        leave_scope();
         return node;
     }
 

@@ -21,6 +21,9 @@ int main()
     ASSERT(10, ({ int i=0; while(i<10) i=i+1; i; }));
     ASSERT(55, ({ int i=0; int j=0; while(i<=10) {j=i+j; i=i+1;} j; }));
 
+    ASSERT(55, ({ int j=0; for (int i=0; i<=10; i=i+1) j=j+i; j; }));
+    ASSERT(3, ({ int i=3; int j=0; for (int i=0; i<=10; i=i+1) j=j+i; i; }));
+
     printf("OK\n");
     return 0;
 }
