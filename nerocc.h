@@ -174,6 +174,7 @@ typedef enum
     ND_DEREF,     // unary *
     ND_NOT,       // !
     ND_BITNOT,    // ~
+    ND_MOD,       // %
     ND_RETURN,    // return
     ND_EXPR_STMT, // Expression statement # follow not sure what this is for
     ND_STMT_EXPR, // Statement expresiion # follow not sure what this is for
@@ -352,11 +353,11 @@ char *get_ident(Token *tok);
  * expr-stmt            = expr? ";"
  * expr                 = assign ("," expr)?
  * assign               = equality (assign-op assign)?
- * assign-op            = "=" | "+=" | "-=" | "*=" | "/="
+ * assign-op            = "=" | "+=" | "-=" | "*=" | "/=" | "%="
  * equality             = relational ("==" relational | "!=" relational)*
  * relational           = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add                  = mul ("+" mul | "-" mul)*
- * mul                  = cast ("*" cast | "/" cast)*
+ * mul                  = cast ("*" cast | "/" cast | "%" cast)*
  * cast                 = "(" type-name ")" cast | unary
  * unary                = ("+" | "-" | "*" | "&" | "!" | "~")? cast | ("++" | "--") unary | postfix
  * postfix              = primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*

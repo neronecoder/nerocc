@@ -873,6 +873,11 @@ Node *assign(Token **cur, Token *tok)
     {
         return to_assign(new_binary(ND_DIV, node, assign(cur, tok->next), tok));
     }
+
+    if (equal(tok, "%="))
+    {
+        return to_assign(new_binary(ND_MOD, node, assign(cur, tok->next), tok));
+    }
     *cur = tok;
     return node;
 }
@@ -1036,6 +1041,12 @@ Node *mul(Token **cur, Token *tok)
         if (equal(tok, "/"))
         {
             node = new_binary(ND_DIV, node, cast(&tok, tok->next), tok);
+            continue;
+        }
+
+        if (equal(tok, "%"))
+        {
+            node = new_binary(ND_MOD, node, cast(&tok, tok->next), tok);
             continue;
         }
         *cur = tok;
