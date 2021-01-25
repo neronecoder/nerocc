@@ -111,17 +111,23 @@ Node *new_inc_dec(Node *node, Token *tok, int addend)
     return new_cast(add_with_type(to_assign(add_with_type(node, new_num(addend, tok), tok)), new_num(-addend, tok), tok), node->ty);
 }
 
-Initializer *new_initializer(Type *ty)
+Initializer *new_initializer(Type *ty, bool is_flexible)
 {
     Initializer *init = calloc(1, sizeof(Initializer));
     init->ty = ty;
 
     if (ty->kind == TY_ARRAY)
     {
+        if (is_flexible && ty->size < 0)
+        {
+            init->is_flexible = true;
+            return init;
+        }
+
         init->children = calloc(ty->array_len, sizeof(Initializer *));
         for (int i = 0; i < ty->array_len; i++)
         {
-            init->children[i] = new_initializer(ty->base);
+            init->children[i] = new_initializer(ty->base, false);
         }
     }
     return init;
@@ -493,10 +499,6 @@ Node *declaration(Token **cur, Token *tok, Type *base_ty)
         }
 
         Type *ty = declarator(&tok, tok, base_ty);
-        if (ty->size < 0)
-        {
-            error_tok(tok, "variable has incomplete type");
-        }
         if (ty->kind == TY_VOID)
         {
             error_tok(tok, "variable declared void.");
@@ -508,6 +510,15 @@ Node *declaration(Token **cur, Token *tok, Type *base_ty)
             Node *expr = lvar_initializer(&tok, tok->next, var);
             cur_node->next = new_unary(ND_EXPR_STMT, expr, tok);
             cur_node = cur_node->next;
+        }
+
+        if (var->ty->size < 0)
+        {
+            error_tok(ty->name, "variable has incomplete type");
+        }
+        if (var->ty->kind == TY_VOID)
+        {
+            error_tok(ty->name, "variable declared void");
         }
     }
 
@@ -1789,6 +1800,10 @@ Token *skip_excess_element(Token *tok)
 
 void string_initializer(Token **cur, Token *tok, Initializer *init)
 {
+    if (init->is_flexible)
+    {
+        *init = *new_initializer(array_of(init->ty->base, tok->ty->array_len), false);
+    }
     int len = MIN(init->ty->array_len, tok->ty->array_len);
     for (int i = 0; i < len; i++)
     {
@@ -1797,9 +1812,33 @@ void string_initializer(Token **cur, Token *tok, Initializer *init)
     *cur = tok->next;
 }
 
+int count_array_init_elements(Token *tok, Type *ty)
+{
+    Initializer *dummy = new_initializer(ty->base, false);
+
+    int i = 0;
+
+    for (; !equal(tok, "}"); i++)
+    {
+        if (i > 0)
+        {
+            tok = skip(tok, ",");
+        }
+        initializer2(&tok, tok, dummy);
+    }
+    return i;
+}
+
 void array_initializer(Token **cur, Token *tok, Initializer *init)
 {
     tok = skip(tok, "{");
+
+    if (init->is_flexible)
+    {
+        int len = count_array_init_elements(tok, init->ty);
+        *init = *new_initializer(array_of(init->ty->base, len), false);
+    }
+
     for (int i = 0; !consume(cur, tok, "}"); i++)
     {
         if (i > 0)
@@ -1836,10 +1875,11 @@ void initializer2(Token **cur, Token *tok, Initializer *init)
     init->expr = assign(cur, tok);
 }
 
-Initializer *initializer(Token **cur, Token *tok, Type *ty)
+Initializer *initializer(Token **cur, Token *tok, Type *ty, Type **new_ty)
 {
-    Initializer *init = new_initializer(ty);
+    Initializer *init = new_initializer(ty, true);
     initializer2(cur, tok, init);
+    *new_ty = init->ty;
     return init;
 }
 
@@ -1889,7 +1929,7 @@ Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok)
 //   x[1][1] = 9
 Node *lvar_initializer(Token **cur, Token *tok, Obj *var)
 {
-    Initializer *init = initializer(cur, tok, var->ty);
+    Initializer *init = initializer(cur, tok, var->ty, &var->ty);
     InitDesg desg = {NULL, 0, var};
 
     // If a partial initializer list is given, the standard requires

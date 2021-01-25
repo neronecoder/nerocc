@@ -339,6 +339,7 @@ struct Initializer
     Initializer *next;
     Type *ty;
     Token *tok;
+    bool is_flexible;
 
     // If it's not an aggregate type and has an initializer
     // `expr` has an initialization expression.
@@ -377,7 +378,7 @@ Node *new_var_node(Obj *var, Token *tok);
 // Convert A++ to `(typeof A)((A+=1) - 1)`
 Node *new_inc_dec(Node *node, Token *tok, int addend);
 
-Initializer *new_initializer(Type *ty);
+Initializer *new_initializer(Type *ty, bool is_flexible);
 
 // Functions for variable
 Obj *new_var(char *name, Type *ty);
@@ -516,7 +517,7 @@ void resolve_goto_labels();
 int64_t eval(Node *node);
 
 void initializer2(Token **cur, Token *tok, Initializer *init);
-Initializer *initializer(Token **cur, Token *tok, Type *ty);
+Initializer *initializer(Token **cur, Token *tok, Type *ty, Type **new_ty);
 Node *init_desg_expr(InitDesg *desg, Token *tok);
 Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok);
 Node *lvar_initializer(Token **cur, Token *tok, Obj *var);
