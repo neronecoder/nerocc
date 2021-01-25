@@ -129,7 +129,26 @@ Initializer *new_initializer(Type *ty, bool is_flexible)
         {
             init->children[i] = new_initializer(ty->base, false);
         }
+        return init;
     }
+
+    if (ty->kind == TY_STRUCT)
+    {
+        // count the number of struct members.
+        int len = 0;
+        for (Member *mem = ty->members; mem; mem = mem->next)
+        {
+            len++;
+        }
+
+        init->children = calloc(len, sizeof(Initializer *));
+
+        for (Member *mem = ty->members; mem; mem = mem->next)
+        {
+            init->children[mem->idx] = new_initializer(mem->ty, false);
+        }
+    }
+
     return init;
 }
 
@@ -695,6 +714,7 @@ void struct_members(Token **cur, Token *tok, Type *ty)
     Member head = {};
     Member *cur_mem = &head;
 
+    int idx = 0;
     while (!equal(tok, "}"))
     {
         Type *base_ty = declspec(&tok, tok, NULL);
@@ -710,6 +730,7 @@ void struct_members(Token **cur, Token *tok, Type *ty)
             Member *mem = calloc(1, sizeof(Member));
             mem->ty = declarator(&tok, tok, base_ty);
             mem->name = mem->ty->name;
+            mem->idx = idx++;
             cur_mem->next = mem;
             cur_mem = cur_mem->next;
         }
@@ -1857,7 +1878,32 @@ void array_initializer(Token **cur, Token *tok, Initializer *init)
     }
 }
 
-// initializer = "{" initializer ("," initializer)* "}" | assign
+void struct_initializer(Token **cur, Token *tok, Initializer *init)
+{
+    tok = skip(tok, "{");
+
+    Member *mem = init->ty->members;
+
+    while (!consume(cur, tok, "}"))
+    {
+        if (mem != init->ty->members)
+        {
+            tok = skip(tok, ",");
+        }
+
+        if (mem)
+        {
+            initializer2(&tok, tok, init->children[mem->idx]);
+            mem = mem->next;
+        }
+        else
+        {
+            tok = skip_excess_element(tok);
+        }
+    }
+}
+
+// initializer = string-initializer | array-initializer | struct-initializer | assign
 void initializer2(Token **cur, Token *tok, Initializer *init)
 {
     if (init->ty->kind == TY_ARRAY && tok->kind == TK_STR)
@@ -1869,6 +1915,12 @@ void initializer2(Token **cur, Token *tok, Initializer *init)
     if (init->ty->kind == TY_ARRAY)
     {
         array_initializer(cur, tok, init);
+        return;
+    }
+
+    if (init->ty->kind == TY_STRUCT)
+    {
+        struct_initializer(cur, tok, init);
         return;
     }
 
@@ -1889,6 +1941,13 @@ Node *init_desg_expr(InitDesg *desg, Token *tok)
     {
         return new_var_node(desg->var, tok);
     }
+    if (desg->member)
+    {
+        Node *node = new_unary(ND_MEMBER, init_desg_expr(desg->next, tok), tok);
+        node->member = desg->member;
+        return node;
+    }
+
     Node *lhs = init_desg_expr(desg->next, tok);
     Node *rhs = new_num(desg->idx, tok);
     return new_unary(ND_DEREF, add_with_type(lhs, rhs, tok), tok);
@@ -1903,6 +1962,19 @@ Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok)
         {
             InitDesg desg2 = {desg, i};
             Node *rhs = create_lvar_init(init->children[i], ty->base, &desg2, tok);
+            node = new_binary(ND_COMMA, node, rhs, tok);
+        }
+        return node;
+    }
+
+    if (ty->kind == TY_STRUCT)
+    {
+        Node *node = new_node(ND_NULL_EXPR, tok);
+
+        for (Member *mem = ty->members; mem; mem = mem->next)
+        {
+            InitDesg desg2 = {desg, 0, mem};
+            Node *rhs = create_lvar_init(init->children[mem->idx], mem->ty, &desg2, tok);
             node = new_binary(ND_COMMA, node, rhs, tok);
         }
         return node;
@@ -1930,7 +2002,7 @@ Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok)
 Node *lvar_initializer(Token **cur, Token *tok, Obj *var)
 {
     Initializer *init = initializer(cur, tok, var->ty, &var->ty);
-    InitDesg desg = {NULL, 0, var};
+    InitDesg desg = {NULL, 0, NULL, var};
 
     // If a partial initializer list is given, the standard requires
     // that unspecified elements are set to 0. Here, we simply
