@@ -517,6 +517,7 @@ Initializer *initializer(Token **cur, Token *tok, Type *ty);
 Node *init_desg_expr(InitDesg *desg, Token *tok);
 Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok);
 Node *lvar_initializer(Token **cur, Token *tok, Obj *var);
+Token *skip_excess_element(Token *tok);
 
 void enter_scope();
 void leave_scope();
