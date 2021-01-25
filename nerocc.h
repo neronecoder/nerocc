@@ -25,6 +25,8 @@ typedef struct VarScope VarScope;
 typedef struct Scope Scope;
 typedef struct TagScope TagScope;
 typedef struct VarAttr VarAttr;
+typedef struct Initializer Initializer;
+typedef struct InitDesg InitDesg;
 
 // Type
 typedef enum
@@ -159,6 +161,7 @@ extern char *current_input;
 
 typedef enum
 {
+    ND_NULL_EXPR, // Do nothing
     ND_ADD,       // +
     ND_SUB,       // -
     ND_MUL,       // *
@@ -324,6 +327,32 @@ struct VarAttr
     bool is_static;
 };
 
+// This struct represents a variable initializer. Since initializers
+// can be nested (e.g. `int x[2][2] = {{1, 2}, {3, 4}}`), this struct
+// is a tree data structure.
+struct Initializer
+{
+    Initializer *next;
+    Type *ty;
+    Token *tok;
+
+    // If it's not an aggregate type and has an initializer
+    // `expr` has an initialization expression.
+    Node *expr;
+
+    // If it's an initializer for an aggregate type (e.g. array or struct),
+    // `children` has initializer for its children.
+    Initializer **children;
+};
+
+// For local variable initializer.
+struct InitDesg
+{
+    InitDesg *next;
+    int idx;
+    Obj *var;
+};
+
 // Functions for node creation
 Node *new_node(NodeKind kind, Token *tok);
 
@@ -343,6 +372,8 @@ Node *new_var_node(Obj *var, Token *tok);
 
 // Convert A++ to `(typeof A)((A+=1) - 1)`
 Node *new_inc_dec(Node *node, Token *tok, int addend);
+
+Initializer *new_initializer(Type *ty);
 
 // Functions for variable
 Obj *new_var(char *name, Type *ty);
@@ -365,6 +396,7 @@ char *get_ident(Token *tok);
  * declspec             = ("void" | "_Bool" | "char" | "int" | "short" | "long" | "typedef" | "static" | struct-decl | union-decl)+
  * declarator           = "*"* ("(" ident ")" | "(" declarator ")" | ident) type-suffix
  * declaration          = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
+ * initializer          = 
  * function-definition  = declspec declarator "{" compound-stmt
  * struct-decl          = "struct" struct-or-union-decl
  * union-decl           = "union" struct-or-union-decl
@@ -478,6 +510,12 @@ Token *parse_typedef(Token *tok, Type *base_ty);
 Node *to_assign(Node *binary);
 void resolve_goto_labels();
 int64_t eval(Node *node);
+
+void initializer2(Token **cur, Token *tok, Initializer *init);
+Initializer *initializer(Token **cur, Token *tok, Type *ty);
+Node *init_desg_expr(InitDesg *desg, Token *tok);
+Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok);
+Node *lvar_initializer(Token **cur, Token *tok, Obj *var);
 
 void enter_scope();
 void leave_scope();

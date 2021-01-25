@@ -111,6 +111,22 @@ Node *new_inc_dec(Node *node, Token *tok, int addend)
     return new_cast(add_with_type(to_assign(add_with_type(node, new_num(addend, tok), tok)), new_num(-addend, tok), tok), node->ty);
 }
 
+Initializer *new_initializer(Type *ty)
+{
+    Initializer *init = calloc(1, sizeof(Initializer));
+    init->ty = ty;
+
+    if (ty->kind == TY_ARRAY)
+    {
+        init->children = calloc(ty->array_len, sizeof(Initializer *));
+        for (int i = 0; i < ty->array_len; i++)
+        {
+            init->children[i] = new_initializer(ty->base);
+        }
+    }
+    return init;
+}
+
 VarScope *find_var(Token *tok)
 {
     for (Scope *sc = scope; sc; sc = sc->next)
@@ -487,17 +503,12 @@ Node *declaration(Token **cur, Token *tok, Type *base_ty)
         }
         Obj *var = new_lvar(get_ident(ty->name), ty);
 
-        if (!equal(tok, "="))
+        if (equal(tok, "="))
         {
-            continue;
+            Node *expr = lvar_initializer(&tok, tok->next, var);
+            cur_node->next = new_unary(ND_EXPR_STMT, expr, tok);
+            cur_node = cur_node->next;
         }
-
-        Node *lhs = new_var_node(var, tok);
-        Node *rhs = assign(&tok, tok->next);
-        Node *node = new_binary(ND_ASSIGN, lhs, rhs, tok);
-
-        cur_node->next = new_unary(ND_EXPR_STMT, node, tok);
-        cur_node = cur_node->next;
     }
 
     Node *node = new_node(ND_BLOCK, tok);
@@ -1762,6 +1773,82 @@ void resolve_goto_labels()
         }
     }
     gotos = labels = NULL;
+}
+
+// initializer = "{" initializer ("," initializer)* "}" | assign
+void initializer2(Token **cur, Token *tok, Initializer *init)
+{
+    if (init->ty->kind == TY_ARRAY)
+    {
+        tok = skip(tok, "{");
+
+        for (int i = 0; i < init->ty->array_len; i++)
+        {
+            if (i > 0)
+            {
+                tok = skip(tok, ",");
+            }
+            initializer2(&tok, tok, init->children[i]);
+        }
+        *cur = skip(tok, "}");
+        return;
+    }
+
+    init->expr = assign(cur, tok);
+}
+
+Initializer *initializer(Token **cur, Token *tok, Type *ty)
+{
+    Initializer *init = new_initializer(ty);
+    initializer2(cur, tok, init);
+    return init;
+}
+
+Node *init_desg_expr(InitDesg *desg, Token *tok)
+{
+    if (desg->var)
+    {
+        return new_var_node(desg->var, tok);
+    }
+    Node *lhs = init_desg_expr(desg->next, tok);
+    Node *rhs = new_num(desg->idx, tok);
+    return new_unary(ND_DEREF, add_with_type(lhs, rhs, tok), tok);
+}
+
+Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok)
+{
+    if (ty->kind == TY_ARRAY)
+    {
+        Node *node = new_node(ND_NULL_EXPR, tok);
+        for (int i = 0; i < ty->array_len; i++)
+        {
+            InitDesg desg2 = {desg, i};
+            Node *rhs = create_lvar_init(init->children[i], ty->base, &desg2, tok);
+            node = new_binary(ND_COMMA, node, rhs, tok);
+        }
+        return node;
+    }
+
+    Node *lhs = init_desg_expr(desg, tok);
+    Node *rhs = init->expr;
+    return new_binary(ND_ASSIGN, lhs, rhs, tok);
+}
+
+// A variable definition with an initializer is a shorthand notation
+// for a variable definition followed by assignments. This function
+// generates assignment expressions for an initializer. For example,
+// `int x[2][2] = {{6, 7}, {8, 9}}` is converted to the following
+// expressions:
+//
+//   x[0][0] = 6
+//   x[0][1] = 7
+//   x[1][0] = 8
+//   x[1][1] = 9
+Node *lvar_initializer(Token **cur, Token *tok, Obj *var)
+{
+    Initializer *init = initializer(cur, tok, var->ty);
+    InitDesg desg = {NULL, 0, var};
+    return create_lvar_init(init, var->ty, &desg, tok);
 }
 
 int64_t eval(Node *node)
