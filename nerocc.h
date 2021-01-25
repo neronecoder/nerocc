@@ -201,6 +201,7 @@ typedef enum
     ND_VAR,       // Objiable
     ND_NUM,       // integer
     ND_CAST,      // Type case
+    ND_MEMZERO,   // Zero-clear a stack variable
 } NodeKind;
 
 struct Node
