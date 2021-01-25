@@ -15,6 +15,9 @@
 
 #define LOG 0
 
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+
 // Common definitions
 typedef struct Type Type;
 typedef struct Token Token;

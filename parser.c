@@ -1787,29 +1787,49 @@ Token *skip_excess_element(Token *tok)
     return tok;
 }
 
+void string_initializer(Token **cur, Token *tok, Initializer *init)
+{
+    int len = MIN(init->ty->array_len, tok->ty->array_len);
+    for (int i = 0; i < len; i++)
+    {
+        init->children[i]->expr = new_num(tok->str[i], tok);
+    }
+    *cur = tok->next;
+}
+
+void array_initializer(Token **cur, Token *tok, Initializer *init)
+{
+    tok = skip(tok, "{");
+    for (int i = 0; !consume(cur, tok, "}"); i++)
+    {
+        if (i > 0)
+        {
+            tok = skip(tok, ",");
+        }
+
+        if (i < init->ty->array_len)
+        {
+            initializer2(&tok, tok, init->children[i]);
+        }
+        else
+        {
+            tok = skip_excess_element(tok);
+        }
+    }
+}
+
 // initializer = "{" initializer ("," initializer)* "}" | assign
 void initializer2(Token **cur, Token *tok, Initializer *init)
 {
+    if (init->ty->kind == TY_ARRAY && tok->kind == TK_STR)
+    {
+        string_initializer(cur, tok, init);
+        return;
+    }
+
     if (init->ty->kind == TY_ARRAY)
     {
-        tok = skip(tok, "{");
-
-        for (int i = 0; !consume(cur, tok, "}"); i++)
-        {
-            if (i > 0)
-            {
-                tok = skip(tok, ",");
-            }
-            if (i < init->ty->array_len)
-            {
-                initializer2(&tok, tok, init->children[i]);
-            }
-            else
-            {
-                tok = skip_excess_element(tok);
-            }
-        }
-        *cur = skip(tok, "}");
+        array_initializer(cur, tok, init);
         return;
     }
 
